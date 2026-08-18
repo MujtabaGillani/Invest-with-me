@@ -12,7 +12,17 @@ from fastapi import APIRouter
 from app.core.config import Settings
 from app.core.logging import get_logger
 
-from .endpoints import admin, alerts, companies, meta, plans, portfolio, profile, watchlist
+from .endpoints import (
+    admin,
+    alerts,
+    companies,
+    meta,
+    plans,
+    portfolio,
+    profile,
+    screener,
+    watchlist,
+)
 
 logger = get_logger(__name__)
 
@@ -35,6 +45,7 @@ def build_api_router(settings: Settings) -> APIRouter:
     router.include_router(plans.router)
     router.include_router(portfolio.router)
     router.include_router(alerts.router)
+    router.include_router(screener.router)
 
     if settings.is_production:
         logger.info("Production environment: admin market-data endpoints are not mounted.")

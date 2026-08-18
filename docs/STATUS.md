@@ -1,13 +1,13 @@
 # Status and resume notes
 
-Last updated: 2026-08-19 (session 5).
+Last updated: 2026-08-19 (session 6).
 
 ## Verified working right now
 
 **Backend** (from `backend/`):
 
 ```bash
-.venv/Scripts/python.exe -m pytest -q                              # 435 passed
+.venv/Scripts/python.exe -m pytest -q                              # 476 passed
 .venv/Scripts/python.exe -m ruff check app tests scripts alembic   # clean
 .venv/Scripts/python.exe -m ruff format --check ...                # clean
 .venv/Scripts/python.exe -m mypy                                   # clean, 98 files
@@ -121,23 +121,26 @@ Notable pieces:
 
 Nothing is blocking. In rough order of value:
 
-1. **Wire up `PsxDataProvider.fetch_quote`.** The real provider is built and
+1. **Look at the two new screens in a browser.** They typecheck, build and their
+   data is verified over HTTP, but no one has seen them rendered. Layout and copy on
+   the buy/sell rows are the most likely thing to need a pass.
+2. **Wire up `PsxDataProvider.fetch_quote`.** The real provider is built and
    verified (see below), but `fetch_quote` has no caller yet: the banner reads the
    delay from `/meta` metadata, not from a live quote. An endpoint returning a
    symbol's latest price with its `observed_at` stamp is the next step towards
    "is this price current enough to act on".
-2. **Fill in the balance sheet and cash flow.** Three of seven fundamentals
+3. **Fill in the balance sheet and cash flow.** Three of seven fundamentals
    metrics report `insufficient_data` under the real provider because no free
    source publishes those figures. A manual-entry path for the companies you
    actually hold would restore the full checklist; a licensed feed would too.
-3. **Accessibility pass.** Controls are label-bound, focus is visible and the tabs
+4. **Accessibility pass.** Controls are label-bound, focus is visible and the tabs
    implement the ARIA pattern, but nothing has been checked with a screen reader
    or axe.
-4. **Component tests for the pages themselves.** Both forms, `PlanReadiness`,
+5. **Component tests for the pages themselves.** Both forms, `PlanReadiness`,
    `Badge`, `format` and `apiClient` are covered; the nine pages are not.
-5. **Backend suite takes ~2.5 minutes** — each API test loads 24 companies × 240
+6. **Backend suite takes ~2 minutes** — each API test loads 24 companies × 240
    price bars. A session-scoped seeded database would cut it.
-6. **Docker images are unbuilt.** The files are written and the YAML validates, but
+7. **Docker images are unbuilt.** The files are written and the YAML validates, but
    `docker compose up --build` has not been run here — no Docker daemon available.
 
 ## Closed in session 5
@@ -172,6 +175,37 @@ in.** `PSX_MARKET_DATA_PROVIDER=psx` now serves real data end to end.
   modules. No unused *files* in either half. The type aliases in
   `src/types/index.ts` were deliberately kept — that is a readable facade over the
   generated `api.d.ts`, not dead weight.
+
+## Closed in session 6
+
+**The app was simplified around one question: what do I buy, and what do I sell.**
+The user does not have prior stock knowledge and found nine screens too complex.
+
+- **`/` is now the buy/sell screen.** `app/services/screener.py` ranks companies by
+  how many of the seven checks they currently pass, in plain sentences with the gaps
+  named, plus a suggested amount, profit target and stop-loss from the user's own
+  limits. The sell list reports only rules the user wrote, quoted back to them:
+  *"DGKC has fallen through the stop-loss you set."* 31 unit tests.
+- **`/money`** shows invested, worth now, profit, banked profit, a profit/loss chart
+  and the holdings table. `app/services/portfolio_history.py` reconstructs the
+  invested-versus-value series from the trade ledger against stored closes; a test
+  asserts its final point equals the portfolio screen's totals. 10 unit tests.
+- **`ProfitChart`** - a third inline SVG in `components/ui/Sparkline.tsx`. Two lines
+  on one shared scale with the gap shaded, because a single profit line hides whether
+  a rising number came from gains or from depositing more money. Still no charting
+  dependency.
+- **The nine original screens are kept**, behind a collapsed "Advanced" nav group
+  (ARCHITECTURE §19). The old dashboard moved to `/dashboard`.
+- **The product line moved, deliberately and precisely** (ARCHITECTURE §18): rank and
+  explain, never forecast. No predicted price, no expected return, no composite grade.
+  A test asserts no candidate row contains prediction language, and the response
+  disclaimer states plainly that no tool can identify which shares will be profitable.
+
+Verified by running both servers and driving them over HTTP: the screener returns
+FATIMA at 7/7 with reasons and a suggested entry; the history series matches the
+portfolio totals exactly. **Not** visually inspected in a browser - there is no
+browser automation in this repo - so the pages are confirmed at the data, type and
+build level only.
 
 ## Git
 

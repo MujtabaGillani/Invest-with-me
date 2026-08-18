@@ -446,6 +446,66 @@ pinned by tests.
 
 ---
 
+## 18. Ranking is allowed; predicting is not
+
+**Decision.** The app now ranks companies and suggests position sizes and exit
+levels - things §1 originally refused to do. The line moved, deliberately, and it
+moved to a specific place: **rank and explain, never forecast.**
+
+**Why it moved.** The user's stated goal is "which share should I buy, and which
+should I sell right now", and they do not have prior stock knowledge. A tool that
+answers only "here is a seven-metric checklist, you decide" is technically
+defensible and practically useless to that person - it hands the hardest part back.
+Refusing to rank does not make them safer; it makes them go and find a worse tool.
+
+**Where the new line sits.** `/screener/buy-candidates` orders companies by *how
+many of the seven checks each currently passes against its published accounts*.
+That is a verifiable statement about filings. It is not a claim that the top row
+will rise, and every row ships the reasons and the gaps so the ordering can be
+argued with. The response carries a disclaimer saying no tool can identify which
+shares will be profitable, and a test asserts no field in any candidate row contains
+prediction language.
+
+**What is still refused.** No predicted price. No expected return. No probability of
+profit. No composite 0-100 grade - counts of criteria met, as §2 established, because
+one number hides which criteria failed. Nothing named `recommendation`.
+
+**Suggested levels are risk policy, not forecasts.** `SuggestionRules` proposes a
+25% profit target and a 15% stop-loss. Neither predicts a price: the target answers
+"at what gain would I take money off the table" and the stop answers "at what loss do
+I accept the thesis was wrong". Both are decisions about the user's own tolerance,
+which is knowable, and both are labelled as starting points to confirm. Position size
+comes from the user's own declared single-position limit, unchanged from §1.
+
+**The sell side needed no new judgement at all.** It reports that a rule the user
+themselves wrote has been crossed, and quotes it back to them. That is the most
+valuable output in the app and it required no prediction - which is the strongest
+evidence that the line is in the right place.
+
+**Rejected: a composite score.** A single "PSX Invest score of 82" would rank more
+smoothly and read as more authoritative. It would also be the exact object §1 was
+written to prevent, and it would obscure that three of seven checks have no data
+under the free provider.
+
+---
+
+## 19. Two navigation tiers rather than deleting the detailed screens
+
+**Decision.** The simplified screens - buy/sell and "your money" - are the app. The
+nine original screens stay, complete and tested, behind a collapsed "Advanced" group.
+
+**Why not delete them.** They are where the detail behind a simplified row lives: a
+user who wants to know *why* a company passes four checks needs the full checklist,
+and the plan and watchlist screens are the only place the underlying records can be
+edited. Deleting them would mean re-deriving that work the first time a simplified
+row was not enough.
+
+**Why not show them.** Eleven destinations is how a tool stops being opened by
+someone who wants one answer. A `<details>` element does the collapsing - no state,
+no library, keyboard-accessible, closed by default.
+
+---
+
 ## Known limitations
 
 Stated plainly, so nobody has to discover them:
@@ -471,6 +531,13 @@ Stated plainly, so nobody has to discover them:
    no free source publishes.
 9. **Prices from the real provider are delayed by at least 15 minutes** (§16), and
    using PSX data beyond personal research needs a licence from the exchange.
+10. **The screener assesses at most 400 companies per request**
+    (`ScreenerService.MAX_UNIVERSE`), because each company costs a fundamentals
+    report with a per-sector peer query. `companies_scanned` reports the real number
+    so a capped scan is never presented as exhaustive.
+11. **Nothing in the app predicts anything** (§18). "Which shares will be profitable"
+    is not a question this or any tool can answer, and the ranking must not be read
+    as an attempt at it.
 7. **The suite takes ~2 minutes.** Each API test loads 24 companies × 240 price
    bars. Tolerable now; a session-scoped seeded database would be the fix if it
    becomes annoying.

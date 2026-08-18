@@ -116,6 +116,16 @@ export type TradeInput = Schemas['TradeCreate'];
 export type Alert = Schemas['AlertRead'];
 export type AlertEvaluation = Schemas['AlertEvaluationResult'];
 
+// --- The simplified buy/sell screen -----------------------------------------
+
+export type BuyCandidates = Schemas['BuyCandidatesRead'];
+export type BuyCandidate = Schemas['BuyCandidate'];
+export type SuggestedEntry = Schemas['SuggestedEntry'];
+export type SellReview = Schemas['SellReviewRead'];
+export type SellReviewItem = Schemas['SellReviewItem'];
+export type PortfolioHistory = Schemas['PortfolioHistoryRead'];
+export type PortfolioValuePoint = Schemas['PortfolioValuePoint'];
+
 // --- Generic responses ------------------------------------------------------
 
 export type MessageResponse = Schemas['MessageResponse'];

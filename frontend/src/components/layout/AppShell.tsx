@@ -11,10 +11,18 @@ import { SyntheticDataBanner } from './SyntheticDataBanner';
  * The application frame: navigation, the data-provenance banner, and the footer
  * disclaimer.
  *
- * Navigation order follows the guide's own sequence rather than importance -
- * profile first, because deciding your own goals comes before looking at any
- * company; portfolio and alerts last, because they only exist once you have acted.
- * A user working through the app top to bottom is following the process.
+ * Two tiers of navigation, on purpose.
+ *
+ * The **primary** items are the three questions a user actually opens the app with:
+ * what should I buy or sell, what is my money doing, and what are my own limits. That
+ * is the whole app for most visits.
+ *
+ * The **advanced** items are the original per-company screens - the full seven-metric
+ * checklist, the watchlist, individual trade plans, the raw alert list. They are
+ * complete and tested, and they are where the detail behind a simplified row lives, so
+ * they stay reachable rather than being deleted. They are collapsed by default because
+ * showing eleven destinations to someone who wants one answer is how a tool stops
+ * getting opened.
  */
 
 interface NavItem {
@@ -25,12 +33,22 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: '/', label: 'Dashboard', hint: 'Where things stand' },
-  { to: '/profile', label: 'Your plan', hint: 'Goals, horizon and risk limits' },
-  { to: '/companies', label: 'Companies', hint: 'Browse and analyse' },
+  { to: '/', label: 'Buy and sell', hint: 'What passes the checks, and what has crossed a rule' },
+  { to: '/money', label: 'Your money', hint: 'Invested, worth now, profit and holdings' },
+  { to: '/profile', label: 'Your limits', hint: 'How much to risk, and your own rules' },
+];
+
+/** The detailed screens. Complete and kept, just not the first thing you see. */
+const ADVANCED_NAV_ITEMS: NavItem[] = [
+  { to: '/dashboard', label: 'Full dashboard', hint: 'The original overview' },
+  { to: '/companies', label: 'All companies', hint: 'Browse and run the full checklist' },
   { to: '/watchlist', label: 'Watchlist', hint: 'Researching, not yet owned' },
   { to: '/plans', label: 'Trade plans', hint: 'Checklists and exit rules' },
-  { to: '/portfolio', label: 'Portfolio', hint: 'Holdings and trades' },
+  {
+    to: '/portfolio',
+    label: 'Portfolio detail',
+    hint: 'Allocation, warnings and the trade ledger',
+  },
 ];
 
 export function AppShell() {
@@ -107,6 +125,35 @@ export function AppShell() {
                 </NavLink>
               </li>
             </ul>
+
+            {/* A plain <details>: no state, no library, keyboard-accessible and
+                closed by default. The advanced screens are one click away, which is
+                the right distance for "the detail behind that row". */}
+            <details className="mt-3">
+              <summary className="text-ink-subtle hover:text-ink cursor-pointer rounded-md px-3 py-2 text-xs">
+                Advanced
+              </summary>
+              <ul className="mt-0.5 space-y-0.5">
+                {ADVANCED_NAV_ITEMS.map((item) => (
+                  <li key={item.to}>
+                    <NavLink
+                      to={item.to}
+                      title={item.hint}
+                      className={({ isActive }) =>
+                        clsx(
+                          'block rounded-md px-3 py-2 text-sm transition-colors',
+                          isActive
+                            ? 'bg-accent-subtle text-accent font-medium'
+                            : 'text-ink-muted hover:bg-surface-sunken hover:text-ink',
+                        )
+                      }
+                    >
+                      {item.label}
+                    </NavLink>
+                  </li>
+                ))}
+              </ul>
+            </details>
           </nav>
         </aside>
 

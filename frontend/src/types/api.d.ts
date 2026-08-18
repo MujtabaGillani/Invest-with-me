@@ -453,6 +453,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/portfolio/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Invested versus value over time
+         * @description The profit/loss series behind the chart.
+         *
+         *     Reconstructed from the trade ledger and stored closes on every request rather
+         *     than stored, so it can never disagree with the trades that produced it. Days
+         *     when nothing traded carry the previous close forward - see the service module
+         *     docstring for why that is the honest choice rather than dropping or
+         *     interpolating them.
+         */
+        get: operations["portfolio_history_api_v1_portfolio_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/portfolio/trades": {
         parameters: {
             query?: never;
@@ -509,6 +535,57 @@ export interface paths {
          *     tolerance and drawdown tolerance contradict each other.
          */
         put: operations["upsert_profile_api_v1_profile_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/screener/buy-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Companies ranked by how many checklist criteria they meet
+         * @description Rank the companies with stored data by the criteria they currently meet.
+         *
+         *     **This is not a prediction and not advice to buy.** The ordering reflects
+         *     published accounts - how many of the seven checks each company passes right now
+         *     - and nothing about future prices. ``unavailable_checks`` names the criteria that
+         *     could not be run for any company because the active data source does not publish
+         *     the figures, which is a property of the source and not of the companies.
+         */
+        get: operations["buy_candidates_api_v1_screener_buy_candidates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/screener/sell-review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Holdings that have crossed one of your own rules
+         * @description Check every open holding against the exit rules the user committed to.
+         *
+         *     The app does not decide whether to sell. It reports that a line the user drew -
+         *     a profit target, a stop-loss, a review interval, a concentration limit - has been
+         *     crossed, and quotes the rule back to them. A holding with no exit rules at all is
+         *     listed too, because that is the decision most worth making before it is urgent.
+         */
+        get: operations["sell_review_api_v1_screener_sell_review_get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -690,6 +767,94 @@ export interface components {
              * @description Why you decided not to buy. Recorded in the plan's journal.
              */
             reason?: string | null;
+        };
+        /**
+         * BuyCandidate
+         * @description One company that currently passes enough of the checklist to look at.
+         */
+        BuyCandidate: {
+            /**
+             * Already Owned
+             * @default false
+             */
+            already_owned: boolean;
+            /** Checks Adequate */
+            checks_adequate: number;
+            /**
+             * Checks Passed
+             * @description Metrics with a 'strong' verdict.
+             */
+            checks_passed: number;
+            /** Checks Total */
+            checks_total: number;
+            /**
+             * Checks Unknown
+             * @description Metrics that could not be judged because the data is not published.
+             */
+            checks_unknown: number;
+            /** Checks Weak */
+            checks_weak: number;
+            /** Company Name */
+            company_name: string;
+            /** Last Price */
+            last_price?: string | null;
+            /** Last Price Date */
+            last_price_date?: string | null;
+            sector: components["schemas"]["Sector"];
+            /** Sector Label */
+            sector_label: string;
+            suggested?: components["schemas"]["SuggestedEntry"] | null;
+            /** Symbol */
+            symbol: string;
+            /**
+             * Timing Note
+             * @description Where the price sits relative to its own recent history. Context on whether now is a calm moment to buy - not a signal that it is.
+             */
+            timing_note?: string | null;
+            /**
+             * Watch Out For
+             * @description Weak checks and unavailable data, stated rather than buried.
+             */
+            watch_out_for?: string[];
+            /**
+             * Why
+             * @description One plain sentence per passing check - the reason it ranks here.
+             */
+            why?: string[];
+        };
+        /**
+         * BuyCandidatesRead
+         * @description The ranked shortlist, plus what the user needs to read it honestly.
+         */
+        BuyCandidatesRead: {
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /** Candidates */
+            candidates: components["schemas"]["BuyCandidate"][];
+            /** Companies Scanned */
+            companies_scanned: number;
+            /**
+             * Companies Skipped
+             * @description Companies with too little stored data to assess at all.
+             */
+            companies_skipped: number;
+            /** Data Is Synthetic */
+            data_is_synthetic: boolean;
+            /**
+             * Disclaimer
+             * @default Ranked by how many of the checklist criteria each company currently meets, based on published accounts. This is not a prediction, a price target, or advice to buy. No tool can tell you which shares will be profitable.
+             */
+            disclaimer: string;
+            /** Price Delay Minutes */
+            price_delay_minutes?: number | null;
+            /**
+             * Unavailable Checks
+             * @description Checks that could not be run for any company, because the active data source does not publish the figures they need.
+             */
+            unavailable_checks?: string[];
         };
         /**
          * ChecklistItemRead
@@ -1235,6 +1400,43 @@ export interface components {
             thesis_still_valid: boolean;
         };
         /**
+         * PortfolioHistoryRead
+         * @description Invested-versus-value over time, for the profit/loss chart.
+         *
+         *     Replayed from the trade ledger against stored closes, so it is a
+         *     reconstruction rather than a stored series - consistent with the rule that
+         *     nothing derived is persisted (ARCHITECTURE §5).
+         */
+        PortfolioHistoryRead: {
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /** First Trade On */
+            first_trade_on?: string | null;
+            /**
+             * Note
+             * @default Reconstructed from your trade ledger and stored closing prices. Days with no stored close carry the previous close forward.
+             */
+            note: string;
+            /** Points */
+            points: components["schemas"]["PortfolioValuePoint"][];
+            /**
+             * Realised Profit
+             * @description Profit already banked on shares sold.
+             */
+            realised_profit: string;
+            /** Total Invested */
+            total_invested: string;
+            /** Total Market Value */
+            total_market_value: string;
+            /** Total Profit */
+            total_profit: string;
+            /** Total Profit Pct */
+            total_profit_pct?: string | null;
+        };
+        /**
          * PortfolioRead
          * @description Everything the portfolio screen needs in one response.
          */
@@ -1285,6 +1487,31 @@ export interface components {
             total_unrealised_pl: string;
             /** Total Unrealised Pl Pct */
             total_unrealised_pl_pct?: string | null;
+        };
+        /**
+         * PortfolioValuePoint
+         * @description Portfolio cost and market value on one date.
+         */
+        PortfolioValuePoint: {
+            /**
+             * Invested
+             * @description Cost basis of shares held on this date.
+             */
+            invested: string;
+            /** Market Value */
+            market_value: string;
+            /**
+             * On Date
+             * Format: date
+             */
+            on_date: string;
+            /**
+             * Profit
+             * @description ``market_value - invested`` on this date.
+             */
+            profit: string;
+            /** Profit Pct */
+            profit_pct?: string | null;
         };
         /**
          * PositionSizingCheck
@@ -1445,6 +1672,72 @@ export interface components {
             weight_pct: string;
         };
         /**
+         * SellReviewItem
+         * @description A holding with something about it that needs a decision.
+         */
+        SellReviewItem: {
+            /** Average Cost */
+            average_cost: string;
+            /** Company Name */
+            company_name: string;
+            /**
+             * Headline
+             * @description One sentence naming the rule and the number that met it.
+             */
+            headline: string;
+            /** Last Price */
+            last_price?: string | null;
+            /** Last Reviewed At */
+            last_reviewed_at?: string | null;
+            /** Profit Target Price */
+            profit_target_price?: string | null;
+            /** Quantity */
+            quantity: string;
+            /** Reason */
+            reason: string;
+            /** Sector Label */
+            sector_label: string;
+            /** Stop Loss Price */
+            stop_loss_price?: string | null;
+            /** Symbol */
+            symbol: string;
+            /** Unrealised Pl */
+            unrealised_pl?: string | null;
+            /** Unrealised Pl Pct */
+            unrealised_pl_pct?: string | null;
+            /** Urgency */
+            urgency: string;
+            /**
+             * What You Said
+             * @description The rule as the user wrote it, quoted back to them.
+             */
+            what_you_said?: string | null;
+        };
+        /**
+         * SellReviewRead
+         * @description Everything needing a sell-side decision, most urgent first.
+         */
+        SellReviewRead: {
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /** Data Is Synthetic */
+            data_is_synthetic: boolean;
+            /**
+             * Disclaimer
+             * @default These are the exit rules you set for yourself, checked against the latest stored price. The app does not decide whether to sell - it tells you when a line you drew has been crossed.
+             */
+            disclaimer: string;
+            /** Holdings Count */
+            holdings_count: number;
+            /** Items */
+            items: components["schemas"]["SellReviewItem"][];
+            /** Price Delay Minutes */
+            price_delay_minutes?: number | null;
+        };
+        /**
          * StatementCheck
          * @description One of the four plain-language questions from guide section 3.
          */
@@ -1483,6 +1776,41 @@ export interface components {
             summary: string;
             /** Unknown Count */
             unknown_count: number;
+        };
+        /**
+         * SuggestedEntry
+         * @description Position size and exit levels proposed for a candidate.
+         *
+         *     Derived entirely from the user's own declared limits and the suggestion rules
+         *     in ``app/analysis/rules.py`` - never from a price forecast. The target and stop
+         *     are *policy* ("at what gain would I take money off the table, at what loss
+         *     would I accept I was wrong"), which is why they can be suggested honestly when
+         *     a price target could not.
+         */
+        SuggestedEntry: {
+            /**
+             * Basis
+             * @description Plain-language statement of where these numbers came from, so they are never mistaken for a prediction.
+             */
+            basis: string;
+            /** Profit Target Pct */
+            profit_target_pct: string;
+            /** Profit Target Price */
+            profit_target_price?: string | null;
+            /** Stop Loss Pct */
+            stop_loss_pct: string;
+            /** Stop Loss Price */
+            stop_loss_price?: string | null;
+            /**
+             * Suggested Amount
+             * @description Largest purchase that stays within the user's single-position limit. Null when no investable capital has been declared yet.
+             */
+            suggested_amount?: string | null;
+            /**
+             * Suggested Shares
+             * @description Whole shares that amount buys at the latest price.
+             */
+            suggested_shares?: number | null;
         };
         /**
          * SyncResultRead
@@ -2696,6 +3024,26 @@ export interface operations {
             };
         };
     };
+    portfolio_history_api_v1_portfolio_history_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Daily invested, market value and profit, oldest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortfolioHistoryRead"];
+                };
+            };
+        };
+    };
     list_trades_api_v1_portfolio_trades_get: {
         parameters: {
             query?: {
@@ -2820,6 +3168,58 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    buy_candidates_api_v1_screener_buy_candidates_get: {
+        parameters: {
+            query?: {
+                /** @description How many companies to return. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ranked shortlist with the reasons in plain language, the weak spots, and a suggested position size and exit levels derived from your own limits. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BuyCandidatesRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sell_review_api_v1_screener_sell_review_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Crossed exit rules first, then positions needing a decision. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SellReviewRead"];
+                };
             };
         };
     };

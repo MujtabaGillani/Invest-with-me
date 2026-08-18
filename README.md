@@ -18,10 +18,26 @@ It turns the guide's process into software:
 | 7. Common mistakes | Research notes required before watching; falling-knife detection; concentration warnings |
 | 8. Verify data yourself | Every response carries provenance and links to PSX/Sarmaaya/SCSTrade |
 
-**There is no endpoint that returns a rating, a price target, or a buy/sell
-signal.** That is a product constraint, not a gap. The guide's own opening point
-is that no model can reliably predict short-term price moves, so the software
-scores stated criteria and records your decisions — it never makes them.
+On top of that, two simplified screens are the default entry point: **Buy and sell**
+(`/`) and **Your money** (`/money`). The nine detailed screens above remain, behind an
+"Advanced" nav group.
+
+**No endpoint returns a prediction, a price target, or an expected return.** The
+guide's own opening point is that no model can reliably predict short-term price
+moves, and that constraint still holds.
+
+What the app *does* now do is **rank and explain**. `/screener/buy-candidates`
+orders companies by how many of the seven checks each currently passes against its
+published accounts, with the reasons and the gaps on every row, and suggests a
+position size and exit levels derived from your own declared limits.
+`/screener/sell-review` reports when a rule *you* wrote has been crossed and quotes
+it back to you.
+
+The distinction is deliberate and documented in
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) §18: "passes 4 of 7 checks" is a
+verifiable statement about filings; "will be profitable" is not a statement any
+software can make. There is no composite score, and a test asserts no candidate row
+contains prediction language.
 
 > ⚠️ **The bundled dataset is synthetic.** Ticker symbols, company names and
 > sectors are real PSX listings; every financial figure and price is generated for

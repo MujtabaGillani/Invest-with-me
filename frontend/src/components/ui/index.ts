@@ -20,6 +20,6 @@ export {
   TriStateAnswer,
   type SelectOption,
 } from './fields';
-export { PriceChart, Sparkline } from './Sparkline';
+export { PriceChart, ProfitChart, Sparkline } from './Sparkline';
 export { StatRow, StatTile } from './StatTile';
 export { TabPanel, Tabs, type TabDefinition } from './Tabs';

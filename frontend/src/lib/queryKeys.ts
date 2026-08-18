@@ -48,6 +48,13 @@ export const queryKeys = {
     all: ['portfolio'] as const,
     summary: ['portfolio', 'summary'] as const,
     trades: (limit: number) => ['portfolio', 'trades', limit] as const,
+    history: ['portfolio', 'history'] as const,
+  },
+
+  screener: {
+    all: ['screener'] as const,
+    buyCandidates: (limit: number) => ['screener', 'buy-candidates', limit] as const,
+    sellReview: ['screener', 'sell-review'] as const,
   },
 
   alerts: {

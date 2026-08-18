@@ -6,10 +6,30 @@ from typing import Annotated
 
 from fastapi import APIRouter, Query, status
 
-from app.api.deps import CurrentUser, PortfolioServiceDep, ProviderDep
+from app.api.deps import CurrentUser, PortfolioServiceDep, ProviderDep, SessionDep
 from app.schemas.portfolio import PortfolioRead, TradeCreate, TradeRead
+from app.schemas.screener import PortfolioHistoryRead
+from app.services.portfolio_history import PortfolioHistoryService
 
 router = APIRouter(prefix="/portfolio", tags=["portfolio"])
+
+
+@router.get(
+    "/history",
+    response_model=PortfolioHistoryRead,
+    summary="Invested versus value over time",
+    response_description="Daily invested, market value and profit, oldest first.",
+)
+def portfolio_history(session: SessionDep, user: CurrentUser) -> PortfolioHistoryRead:
+    """The profit/loss series behind the chart.
+
+    Reconstructed from the trade ledger and stored closes on every request rather
+    than stored, so it can never disagree with the trades that produced it. Days
+    when nothing traded carry the previous close forward - see the service module
+    docstring for why that is the honest choice rather than dropping or
+    interpolating them.
+    """
+    return PortfolioHistoryService(session).history(user.id)
 
 
 @router.get(

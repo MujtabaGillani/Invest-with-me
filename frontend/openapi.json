@@ -318,6 +318,193 @@
         "title": "Body_abandon_plan_api_v1_plans__plan_id__abandon_post",
         "type": "object"
       },
+      "BuyCandidate": {
+        "additionalProperties": false,
+        "description": "One company that currently passes enough of the checklist to look at.",
+        "properties": {
+          "already_owned": {
+            "default": false,
+            "title": "Already Owned",
+            "type": "boolean"
+          },
+          "checks_adequate": {
+            "title": "Checks Adequate",
+            "type": "integer"
+          },
+          "checks_passed": {
+            "description": "Metrics with a 'strong' verdict.",
+            "title": "Checks Passed",
+            "type": "integer"
+          },
+          "checks_total": {
+            "title": "Checks Total",
+            "type": "integer"
+          },
+          "checks_unknown": {
+            "description": "Metrics that could not be judged because the data is not published.",
+            "title": "Checks Unknown",
+            "type": "integer"
+          },
+          "checks_weak": {
+            "title": "Checks Weak",
+            "type": "integer"
+          },
+          "company_name": {
+            "title": "Company Name",
+            "type": "string"
+          },
+          "last_price": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Price"
+          },
+          "last_price_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Price Date"
+          },
+          "sector": {
+            "$ref": "#/components/schemas/Sector"
+          },
+          "sector_label": {
+            "title": "Sector Label",
+            "type": "string"
+          },
+          "suggested": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SuggestedEntry"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          },
+          "timing_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Where the price sits relative to its own recent history. Context on whether now is a calm moment to buy - not a signal that it is.",
+            "title": "Timing Note"
+          },
+          "watch_out_for": {
+            "description": "Weak checks and unavailable data, stated rather than buried.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Watch Out For",
+            "type": "array"
+          },
+          "why": {
+            "description": "One plain sentence per passing check - the reason it ranks here.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Why",
+            "type": "array"
+          }
+        },
+        "required": [
+          "symbol",
+          "company_name",
+          "sector",
+          "sector_label",
+          "checks_passed",
+          "checks_adequate",
+          "checks_weak",
+          "checks_unknown",
+          "checks_total"
+        ],
+        "title": "BuyCandidate",
+        "type": "object"
+      },
+      "BuyCandidatesRead": {
+        "additionalProperties": false,
+        "description": "The ranked shortlist, plus what the user needs to read it honestly.",
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/BuyCandidate"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "companies_scanned": {
+            "title": "Companies Scanned",
+            "type": "integer"
+          },
+          "companies_skipped": {
+            "description": "Companies with too little stored data to assess at all.",
+            "title": "Companies Skipped",
+            "type": "integer"
+          },
+          "data_is_synthetic": {
+            "title": "Data Is Synthetic",
+            "type": "boolean"
+          },
+          "disclaimer": {
+            "default": "Ranked by how many of the checklist criteria each company currently meets, based on published accounts. This is not a prediction, a price target, or advice to buy. No tool can tell you which shares will be profitable.",
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "price_delay_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Delay Minutes"
+          },
+          "unavailable_checks": {
+            "description": "Checks that could not be run for any company, because the active data source does not publish the figures they need.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Unavailable Checks",
+            "type": "array"
+          }
+        },
+        "required": [
+          "candidates",
+          "companies_scanned",
+          "companies_skipped",
+          "as_of",
+          "data_is_synthetic"
+        ],
+        "title": "BuyCandidatesRead",
+        "type": "object"
+      },
       "ChecklistItemRead": {
         "additionalProperties": false,
         "description": "One pre-buy question and the user's answer.",
@@ -1545,6 +1732,84 @@
         "title": "PlanReviewRead",
         "type": "object"
       },
+      "PortfolioHistoryRead": {
+        "additionalProperties": false,
+        "description": "Invested-versus-value over time, for the profit/loss chart.\n\nReplayed from the trade ledger against stored closes, so it is a\nreconstruction rather than a stored series - consistent with the rule that\nnothing derived is persisted (ARCHITECTURE \u00a75).",
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "first_trade_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Trade On"
+          },
+          "note": {
+            "default": "Reconstructed from your trade ledger and stored closing prices. Days with no stored close carry the previous close forward.",
+            "title": "Note",
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/PortfolioValuePoint"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "realised_profit": {
+            "description": "Profit already banked on shares sold.",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Realised Profit",
+            "type": "string"
+          },
+          "total_invested": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total Invested",
+            "type": "string"
+          },
+          "total_market_value": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total Market Value",
+            "type": "string"
+          },
+          "total_profit": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Total Profit",
+            "type": "string"
+          },
+          "total_profit_pct": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Profit Pct"
+          }
+        },
+        "required": [
+          "points",
+          "total_invested",
+          "total_market_value",
+          "total_profit",
+          "realised_profit",
+          "as_of"
+        ],
+        "title": "PortfolioHistoryRead",
+        "type": "object"
+      },
       "PortfolioRead": {
         "additionalProperties": false,
         "description": "Everything the portfolio screen needs in one response.",
@@ -1672,6 +1937,54 @@
           "diversification_note"
         ],
         "title": "PortfolioSummary",
+        "type": "object"
+      },
+      "PortfolioValuePoint": {
+        "additionalProperties": false,
+        "description": "Portfolio cost and market value on one date.",
+        "properties": {
+          "invested": {
+            "description": "Cost basis of shares held on this date.",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Invested",
+            "type": "string"
+          },
+          "market_value": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Market Value",
+            "type": "string"
+          },
+          "on_date": {
+            "format": "date",
+            "title": "On Date",
+            "type": "string"
+          },
+          "profit": {
+            "description": "``market_value - invested`` on this date.",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Profit",
+            "type": "string"
+          },
+          "profit_pct": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profit Pct"
+          }
+        },
+        "required": [
+          "on_date",
+          "invested",
+          "market_value",
+          "profit"
+        ],
+        "title": "PortfolioValuePoint",
         "type": "object"
       },
       "PositionSizingCheck": {
@@ -2008,6 +2321,193 @@
         "title": "SectorAllocation",
         "type": "object"
       },
+      "SellReviewItem": {
+        "additionalProperties": false,
+        "description": "A holding with something about it that needs a decision.",
+        "properties": {
+          "average_cost": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Average Cost",
+            "type": "string"
+          },
+          "company_name": {
+            "title": "Company Name",
+            "type": "string"
+          },
+          "headline": {
+            "description": "One sentence naming the rule and the number that met it.",
+            "title": "Headline",
+            "type": "string"
+          },
+          "last_price": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Price"
+          },
+          "last_reviewed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Reviewed At"
+          },
+          "profit_target_price": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profit Target Price"
+          },
+          "quantity": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Quantity",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "sector_label": {
+            "title": "Sector Label",
+            "type": "string"
+          },
+          "stop_loss_price": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Loss Price"
+          },
+          "symbol": {
+            "title": "Symbol",
+            "type": "string"
+          },
+          "unrealised_pl": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unrealised Pl"
+          },
+          "unrealised_pl_pct": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unrealised Pl Pct"
+          },
+          "urgency": {
+            "title": "Urgency",
+            "type": "string"
+          },
+          "what_you_said": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The rule as the user wrote it, quoted back to them.",
+            "title": "What You Said"
+          }
+        },
+        "required": [
+          "symbol",
+          "company_name",
+          "sector_label",
+          "quantity",
+          "average_cost",
+          "reason",
+          "urgency",
+          "headline"
+        ],
+        "title": "SellReviewItem",
+        "type": "object"
+      },
+      "SellReviewRead": {
+        "additionalProperties": false,
+        "description": "Everything needing a sell-side decision, most urgent first.",
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "data_is_synthetic": {
+            "title": "Data Is Synthetic",
+            "type": "boolean"
+          },
+          "disclaimer": {
+            "default": "These are the exit rules you set for yourself, checked against the latest stored price. The app does not decide whether to sell - it tells you when a line you drew has been crossed.",
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "holdings_count": {
+            "title": "Holdings Count",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SellReviewItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "price_delay_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Delay Minutes"
+          }
+        },
+        "required": [
+          "items",
+          "holdings_count",
+          "as_of",
+          "data_is_synthetic"
+        ],
+        "title": "SellReviewRead",
+        "type": "object"
+      },
       "StatementCheck": {
         "additionalProperties": false,
         "description": "One of the four plain-language questions from guide section 3.",
@@ -2082,6 +2582,83 @@
           "summary"
         ],
         "title": "StatementReview",
+        "type": "object"
+      },
+      "SuggestedEntry": {
+        "additionalProperties": false,
+        "description": "Position size and exit levels proposed for a candidate.\n\nDerived entirely from the user's own declared limits and the suggestion rules\nin ``app/analysis/rules.py`` - never from a price forecast. The target and stop\nare *policy* (\"at what gain would I take money off the table, at what loss\nwould I accept I was wrong\"), which is why they can be suggested honestly when\na price target could not.",
+        "properties": {
+          "basis": {
+            "description": "Plain-language statement of where these numbers came from, so they are never mistaken for a prediction.",
+            "title": "Basis",
+            "type": "string"
+          },
+          "profit_target_pct": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Profit Target Pct",
+            "type": "string"
+          },
+          "profit_target_price": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profit Target Price"
+          },
+          "stop_loss_pct": {
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Stop Loss Pct",
+            "type": "string"
+          },
+          "stop_loss_price": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Loss Price"
+          },
+          "suggested_amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Largest purchase that stays within the user's single-position limit. Null when no investable capital has been declared yet.",
+            "title": "Suggested Amount"
+          },
+          "suggested_shares": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Whole shares that amount buys at the latest price.",
+            "title": "Suggested Shares"
+          }
+        },
+        "required": [
+          "profit_target_pct",
+          "stop_loss_pct",
+          "basis"
+        ],
+        "title": "SuggestedEntry",
         "type": "object"
       },
       "SyncResultRead": {
@@ -4365,6 +4942,28 @@
         ]
       }
     },
+    "/api/v1/portfolio/history": {
+      "get": {
+        "description": "The profit/loss series behind the chart.\n\nReconstructed from the trade ledger and stored closes on every request rather\nthan stored, so it can never disagree with the trades that produced it. Days\nwhen nothing traded carry the previous close forward - see the service module\ndocstring for why that is the honest choice rather than dropping or\ninterpolating them.",
+        "operationId": "portfolio_history_api_v1_portfolio_history_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioHistoryRead"
+                }
+              }
+            },
+            "description": "Daily invested, market value and profit, oldest first."
+          }
+        },
+        "summary": "Invested versus value over time",
+        "tags": [
+          "portfolio"
+        ]
+      }
+    },
     "/api/v1/portfolio/trades": {
       "get": {
         "description": "The trade ledger, newest first.",
@@ -4506,6 +5105,76 @@
         "summary": "Create or replace the investor profile",
         "tags": [
           "investor profile"
+        ]
+      }
+    },
+    "/api/v1/screener/buy-candidates": {
+      "get": {
+        "description": "Rank the companies with stored data by the criteria they currently meet.\n\n**This is not a prediction and not advice to buy.** The ordering reflects\npublished accounts - how many of the seven checks each company passes right now\n- and nothing about future prices. ``unavailable_checks`` names the criteria that\ncould not be run for any company because the active data source does not publish\nthe figures, which is a property of the source and not of the companies.",
+        "operationId": "buy_candidates_api_v1_screener_buy_candidates_get",
+        "parameters": [
+          {
+            "description": "How many companies to return.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 10,
+              "description": "How many companies to return.",
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuyCandidatesRead"
+                }
+              }
+            },
+            "description": "Ranked shortlist with the reasons in plain language, the weak spots, and a suggested position size and exit levels derived from your own limits."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Companies ranked by how many checklist criteria they meet",
+        "tags": [
+          "screener"
+        ]
+      }
+    },
+    "/api/v1/screener/sell-review": {
+      "get": {
+        "description": "Check every open holding against the exit rules the user committed to.\n\nThe app does not decide whether to sell. It reports that a line the user drew -\na profit target, a stop-loss, a review interval, a concentration limit - has been\ncrossed, and quotes the rule back to them. A holding with no exit rules at all is\nlisted too, because that is the decision most worth making before it is urgent.",
+        "operationId": "sell_review_api_v1_screener_sell_review_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SellReviewRead"
+                }
+              }
+            },
+            "description": "Crossed exit rules first, then positions needing a decision."
+          }
+        },
+        "summary": "Holdings that have crossed one of your own rules",
+        "tags": [
+          "screener"
         ]
       }
     },

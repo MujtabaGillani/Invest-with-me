@@ -17,6 +17,7 @@ Two rules for anyone changing a value here:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from decimal import Decimal
 
 from app.core.enums import Sector
 
@@ -157,5 +158,48 @@ class TechnicalRules:
     min_sessions: int = 30
 
 
+@dataclass(frozen=True, slots=True)
+class SuggestionRules:
+    """Starting points for the exit levels the app proposes.
+
+    These exist because the app now *suggests* a profit target and a stop-loss
+    rather than only recording ones the user typed. That is a deliberate product
+    change, and it puts a burden on these numbers: a suggestion is anchoring, so a
+    badly chosen default does more harm than no default at all.
+
+    They are **starting points to be confirmed, not predictions.** Nothing here
+    forecasts a price. The target answers "at what gain would I have been right
+    enough to take money off the table", and the stop answers "at what loss do I
+    admit the thesis was wrong" - both are risk policy, which is knowable, rather
+    than price forecasting, which is not.
+    """
+
+    #: Suggested profit target, as a percent gain from the buy price.
+    #:
+    #: 25% is deliberately modest. The guide's framing is that a target exists to
+    #: stop an unrealised gain from becoming a decision made under greed, not to
+    #: capture a maximum. It also sits comfortably above round-trip costs and
+    #: typical Pakistani inflation over a holding period, so hitting it is a real
+    #: gain rather than a nominal one.
+    profit_target_pct: Decimal = Decimal("25")
+
+    #: Suggested stop-loss, as a percent fall from the buy price.
+    #:
+    #: 15% is set so that the target is meaningfully larger than the stop: risking
+    #: 15 to make 25 means being right less than half the time is still survivable.
+    #: It is also wide enough to sit outside ordinary PSX daily noise, so a normal
+    #: down day does not eject a position that was never in trouble.
+    stop_loss_pct: Decimal = Decimal("15")
+
+    #: Minimum checks a company must pass before it is listed as a candidate.
+    #:
+    #: Two, out of a maximum of seven, and only counting *strong* verdicts. Set low
+    #: on purpose: with the free PSX data three metrics report insufficient data for
+    #: every company, so requiring four would return an empty list and read as "no
+    #: company on the exchange qualifies" rather than "we cannot see enough".
+    min_strong_checks: int = 2
+
+
 DEFAULT_FUNDAMENTAL_RULES = FundamentalRules()
 DEFAULT_TECHNICAL_RULES = TechnicalRules()
+DEFAULT_SUGGESTION_RULES = SuggestionRules()
