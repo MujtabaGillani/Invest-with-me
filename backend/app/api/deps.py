@@ -13,7 +13,6 @@ module exists rather than endpoints constructing their own collaborators:
 
 from __future__ import annotations
 
-from collections.abc import Generator
 from typing import Annotated
 
 from fastapi import Depends, Query, Request
@@ -158,8 +157,3 @@ WatchlistServiceDep = Annotated[WatchlistService, Depends(get_watchlist_service)
 PlanServiceDep = Annotated[TradePlanService, Depends(get_plan_service)]
 PortfolioServiceDep = Annotated[PortfolioService, Depends(get_portfolio_service)]
 AlertServiceDep = Annotated[AlertService, Depends(get_alert_service)]
-
-
-def session_generator() -> Generator[Session, None, None]:
-    """Re-export of :func:`app.db.session.get_session` for explicit overrides."""
-    yield from get_session()

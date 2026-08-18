@@ -34,6 +34,21 @@ dev = [
     "httpx>=0.27,<1.0",          # FastAPI TestClient transport
     "ruff>=0.8,<1.0",            # lint + format
     "mypy>=1.13,<2.0",
+    # The PSX company-page parser is unit-tested with hand-written HTML fixtures,
+    # so its parser backend belongs in dev too. Small, unlike pandas - which is
+    # why psxdata itself stays out and is faked in the tests instead.
+    "beautifulsoup4>=4.12,<5.0",
+    "lxml>=5.0,<7.0",
+]
+# Real PSX data. Kept optional because psxdata pulls in pandas, pyarrow and
+# numpy - tens of megabytes that a checkout running on the bundled illustrative
+# dataset has no use for. Pinned exactly: 0.1.0a5 is a pre-release that scrapes
+# the PSX website, so an upgrade can change the HTML it depends on.
+psx = [
+    "psxdata==0.1.0a5",
+    "beautifulsoup4>=4.12,<5.0",   # parses the PSX company pages
+    "lxml>=5.0,<7.0",              # bs4 parser backend
+    "requests>=2.32,<3.0",
 ]
 
 [tool.setuptools.packages.find]

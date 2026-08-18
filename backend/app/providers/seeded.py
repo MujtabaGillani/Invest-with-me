@@ -136,6 +136,10 @@ class SeededMarketDataProvider:
                 "decisions."
             ),
             is_synthetic=True,
+            # Left as "unknown" rather than 0: these prices are not delayed, but
+            # they are not a market either, and reporting "real time" for invented
+            # figures would be the more misleading of the two.
+            price_delay_minutes=None,
             verification_sources=[
                 "PSX filings and announcements (PUCARS) - https://dps.psx.com.pk/",
                 "Sarmaaya - https://sarmaaya.pk/",

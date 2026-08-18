@@ -8,7 +8,7 @@
  */
 
 /** Base URL for the API. Defaults to the Vite dev proxy path. */
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 
 /**
  * The backend's error envelope. Every failure has this shape - domain rule,

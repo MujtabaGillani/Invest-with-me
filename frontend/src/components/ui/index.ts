@@ -10,7 +10,7 @@ export { AnswerBadge, Badge, PlanStatusBadge, SeverityBadge, VerdictBadge } from
 export { Button } from './Button';
 export { Card, CardBody, CardBodyFlush, CardFooter, CardHeader } from './Card';
 export { Table, TBody, TD, TH, THead, THRow, TR } from './DataTable';
-export { EmptyState, ErrorState, LoadingState, Notice, Spinner, TableSkeleton } from './feedback';
+export { EmptyState, ErrorState, LoadingState, Notice, TableSkeleton } from './feedback';
 export {
   CheckboxField,
   NumberField,

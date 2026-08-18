@@ -103,6 +103,7 @@ def metadata(provider: ProviderDep) -> MetadataRead:
             description=provider.metadata.description,
             is_synthetic=provider.metadata.is_synthetic,
             verification_sources=provider.metadata.verification_sources,
+            price_delay_minutes=provider.metadata.price_delay_minutes,
         ),
         sectors=[EnumOption(value=sector.value, label=SECTOR_LABELS[sector]) for sector in Sector],
         time_horizons=[

@@ -78,6 +78,8 @@ class Settings(BaseSettings):
     # -- Market data ------------------------------------------------------
     #: Key resolved through ``app.providers.registry``. Swapping this is the
     #: only change needed to move from seeded data to a live PSX feed.
+    #: ``"seeded"`` is the bundled illustrative dataset; ``"psx"`` is real data
+    #: and requires the optional extra (``pip install -e ".[psx]"``).
     market_data_provider: str = "seeded"
 
     # -- Identity ---------------------------------------------------------

@@ -16,9 +16,25 @@ from app.providers.seeded import SeededMarketDataProvider
 
 logger = get_logger(__name__)
 
+
+def _build_psx_provider() -> MarketDataProvider:
+    """Construct the real PSX provider, importing it only when selected.
+
+    Deliberately a function rather than a module-level import: ``app.providers.psx``
+    pulls in ``psxdata``, and therefore pandas, pyarrow and numpy. That is tens of
+    megabytes and a visible import delay, which every test run and every default
+    checkout - all of which use the seeded provider - would otherwise pay for
+    nothing.
+    """
+    from app.providers.psx import PsxDataProvider
+
+    return PsxDataProvider()
+
+
 #: Registered factories keyed by the value of ``PSX_MARKET_DATA_PROVIDER``.
 _FACTORIES: dict[str, Callable[[], MarketDataProvider]] = {
     "seeded": SeededMarketDataProvider,
+    "psx": _build_psx_provider,
 }
 
 

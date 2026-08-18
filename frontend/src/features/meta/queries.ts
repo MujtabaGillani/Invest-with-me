@@ -39,29 +39,3 @@ export function toSelectOptions(options: EnumOption[] | undefined): SelectOption
     description: option.description ?? null,
   }));
 }
-
-/**
- * Look up a sector's display label.
- *
- * Falls back to the raw value rather than rendering blank: if the server adds a
- * sector the client has not fetched yet, showing `new_sector` is worse than a
- * label but far better than an empty cell.
- */
-export function useSectorLabel(): (sector: string) => string {
-  const { data } = useMetadata();
-  return (sector: string) =>
-    data?.sectors.find((option) => option.value === sector)?.label ?? sector;
-}
-
-/**
- * Whether the market data behind every figure in the app is generated.
- *
- * Defaults to `true` while loading and on failure. That default is deliberate: if
- * the app cannot confirm the data is real, it must assume it is not and keep the
- * warning banner up. The opposite default would present invented figures as real
- * during exactly the moments when something is already wrong.
- */
-export function useIsSyntheticData(): boolean {
-  const { data } = useMetadata();
-  return data?.provider.is_synthetic ?? true;
-}

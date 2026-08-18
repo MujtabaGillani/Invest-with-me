@@ -12,7 +12,7 @@ import type { Portfolio, Trade, TradeInput } from '@/types';
  * portfolio query and the next render is correct by construction.
  */
 
-export const TRADES_PAGE_SIZE = 50;
+const TRADES_PAGE_SIZE = 50;
 
 export function usePortfolio() {
   return useQuery({

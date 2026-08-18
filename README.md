@@ -165,6 +165,13 @@ protocol, never on an implementation, so replacing the bundled dataset with a li
 PSX feed, a broker API or a CSV importer means writing one class and adding one
 line to `providers/registry.py` — no service, endpoint or test changes.
 
+Two providers ship, selected with `PSX_MARKET_DATA_PROVIDER`:
+
+| Value | Data |
+| --- | --- |
+| `seeded` (default) | The bundled illustrative dataset. `is_synthetic: true`. |
+| `psx` | **Real PSX data.** `is_synthetic: false`, `price_delay_minutes: 15`. |
+
 The bundled `SeededMarketDataProvider` generates deterministic data from compact
 company profiles in `app/data/seed_companies.json`. It reports
 `is_synthetic: true`, which propagates through `/meta` and the portfolio response
@@ -173,6 +180,36 @@ deliberately includes a falling knife (DGKC), a loss-maker with no meaningful P/
 (TRG), a bank whose gearing must be judged against peers (HBL) and a profitable
 company burning cash (UNITY), so every branch of the analysis engines is exercised
 by the demo data itself.
+
+### Real PSX data
+
+```bash
+pip install -e ".[psx]"                 # psxdata + parser deps, ~50 MB
+export PSX_MARKET_DATA_PROVIDER=psx
+```
+
+`PsxDataProvider` composes two upstreams: the MIT-licensed `psxdata` library for
+listings and daily OHLCV, and the PSX Data Portal company pages for annual Sales,
+Profit after Taxation and EPS. Verified against real listings — 740 equities
+filtered from 1,002 raw symbols (debt instruments and ETFs excluded).
+
+**It covers four of the seven fundamentals metrics.** Revenue growth, net margin,
+EPS trend and P/E work. Debt-to-equity, free cash flow and dividends report
+`insufficient_data`, because no free source publishes the balance sheet or the
+cash flow statement. That is the honest outcome rather than a guess — see
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) §15.
+
+Three caveats the UI surfaces rather than hides:
+
+- **Prices are delayed by at least 15 minutes.** Real-time PSX data requires a
+  licence from the exchange. The banner says so whenever
+  `price_delay_minutes` is not `0` (§16).
+- **Prices and EPS are unadjusted** for bonus issues and splits. An EPS series
+  spanning a share-count change is reported as not comparable rather than as a
+  decline (§17).
+- **Terms of use.** PSX prohibits redistribution and commercial use of its market
+  data without a licence (`marketdatarequest@psx.com.pk`). Reading the public site
+  for your own research is a different matter from republishing it.
 
 ## Authentication
 

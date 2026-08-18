@@ -83,6 +83,30 @@ def _insufficient(
     )
 
 
+def _share_count_change_pct(years: Sequence[FinancialYear]) -> float | None:
+    """Percentage change in share count across the reported years, if known.
+
+    Compares the earliest and latest years that report a positive share count.
+    Returns ``None`` when fewer than two do, which is the common case - most
+    sources do not publish it, and the caller then falls back to judging the EPS
+    series at face value.
+
+    Uses the extremes rather than the largest single step deliberately: a split
+    followed by years of stability shows up in the endpoints, and the question
+    being asked is whether the *first* and *last* EPS figures are comparable.
+    """
+    counts = [
+        year.shares_outstanding
+        for year in years
+        if year.shares_outstanding is not None and year.shares_outstanding > 0
+    ]
+    if len(counts) < 2:
+        return None
+    # ``pct_change(current, previous)`` - latest first, so the sign reads as
+    # growth in the share count rather than a shrinkage back to the old base.
+    return pct_change(counts[-1], counts[0])
+
+
 # ---------------------------------------------------------------------------
 # Individual metrics
 # ---------------------------------------------------------------------------
@@ -241,6 +265,30 @@ def assess_eps_trend(
     eps_values = [year.eps for year in years if year.eps is not None]
     if len(eps_values) < 2:
         return _insufficient(key, label, what, criteria, history=history)
+
+    # A bonus issue or a split changes the denominator, and exchanges publish EPS
+    # without restating the earlier years. Comparing across that break would call
+    # a company whose profit tripled "weak", so refuse the comparison instead.
+    share_change_pct = _share_count_change_pct(years)
+    if (
+        share_change_pct is not None
+        and abs(share_change_pct) > rules.eps_share_count_change_tolerance_pct
+    ):
+        return _insufficient(
+            key,
+            label,
+            what,
+            criteria,
+            reason=(
+                f"The share count changed by about {_fmt(abs(share_change_pct), '%')} "
+                f"over these years, which points to a bonus issue or a split. "
+                f"Reported EPS is not restated for that, so the earlier and later "
+                f"figures are calculated on different share bases and cannot be "
+                f"compared. Judge profit growth from the revenue and margin checks, "
+                f"and read the EPS figures below one year at a time."
+            ),
+            history=history,
+        )
 
     first, latest = eps_values[0], eps_values[-1]
     steps = [eps_values[i] - eps_values[i - 1] for i in range(1, len(eps_values))]

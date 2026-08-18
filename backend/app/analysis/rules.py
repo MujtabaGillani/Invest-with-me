@@ -43,6 +43,24 @@ class FundamentalRules:
     #: called "consistent". 2 of 3, or 3 of 4.
     revenue_consistency_ratio: float = 0.66
 
+    # -- EPS comparability ------------------------------------------------
+    #: Change in share count (%) beyond which an EPS series is treated as not
+    #: comparable across years.
+    #:
+    #: PSX publishes EPS **as reported** and does not restate it after a bonus
+    #: issue or a split, both of which are common in Pakistan. Lucky Cement's
+    #: filings show EPS of 43.06 for FY2023 against 18.91 for FY2024 while net
+    #: profit doubled, because the share count went from roughly 319 million to
+    #: 1.49 billion. Comparing those two figures answers no useful question.
+    #:
+    #: 25% is set well above ordinary dilution from an employee scheme or a small
+    #: placement - which does not invalidate the comparison - and well below the
+    #: step change a bonus issue or split produces. When it trips, the metric
+    #: reports insufficient data with the reason, rather than "weak": a business
+    #: whose profit tripled must never be scored as deteriorating because of an
+    #: accounting convention.
+    eps_share_count_change_tolerance_pct: float = 25.0
+
     # -- Net margin (%) ---------------------------------------------------
     #: A double-digit net margin indicates real pricing power.
     net_margin_strong: float = 10.0

@@ -10,7 +10,7 @@ import {
 import { usePriceHistory } from '@/features/companies/queries';
 import { isApiError } from '@/lib/apiClient';
 import { formatDate, formatMoney, humanise } from '@/lib/format';
-import type { IndicatorReading, TechnicalReport } from '@/types';
+import type { IndicatorReading } from '@/types';
 
 import { useTechnicals } from './queries';
 
@@ -119,15 +119,5 @@ function ReadingRow({ reading }: { reading: IndicatorReading }) {
           : `${reading.value}${reading.unit ?? ''}`}
       </p>
     </div>
-  );
-}
-
-/** Compact readings for the dashboard and company header. */
-export function TechnicalSummaryLine({ report }: { report: TechnicalReport }) {
-  return (
-    <p className="text-ink-muted text-xs">
-      {humanise(report.trend_direction)} · RSI {report.rsi.value ?? '—'} ·{' '}
-      {humanise(report.moving_average_position).toLowerCase()} moving averages
-    </p>
   );
 }

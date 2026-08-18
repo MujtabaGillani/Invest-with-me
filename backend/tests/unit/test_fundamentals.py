@@ -43,6 +43,7 @@ def year(
     ocf: float | None = None,
     capex: float | None = None,
     dividend: float | None = None,
+    shares: float | None = None,
 ) -> FinancialYear:
     """Build a financial year with only the fields a test cares about."""
     return FinancialYear(
@@ -55,6 +56,7 @@ def year(
         operating_cash_flow=ocf,
         capital_expenditure=capex,
         dividend_per_share=dividend,
+        shares_outstanding=shares,
     )
 
 
@@ -164,6 +166,49 @@ class TestEpsTrend:
 
     def test_single_year_reports_insufficient(self) -> None:
         assert assess_eps_trend([year(2024, eps=5.0)]).verdict is MetricVerdict.INSUFFICIENT_DATA
+
+    def test_bonus_issue_is_not_reported_as_weak(self) -> None:
+        """A share count that jumps makes the EPS series incomparable, not bad.
+
+        Modelled on Lucky Cement's real filings: profit tripled while reported
+        EPS fell, because the share count went from ~319m to ~1.47bn. Scoring
+        that as "weak" was a false negative on real PSX data - exchanges publish
+        EPS as reported and never restate it after a bonus issue.
+        """
+        years = [
+            year(2023, eps=43.06, shares=318_800_000.0),
+            year(2024, eps=18.91, shares=1_486_300_000.0),
+            year(2025, eps=22.59, shares=1_464_900_000.0),
+            year(2026, eps=31.83, shares=1_465_000_000.0),
+        ]
+        result = assess_eps_trend(years)
+        assert result.verdict is MetricVerdict.INSUFFICIENT_DATA
+        assert "bonus issue or a split" in result.commentary
+        assert "359" in result.commentary, "reports share-count growth, not shrinkage"
+        assert result.history, "the yearly figures are still shown"
+
+    def test_ordinary_dilution_does_not_block_the_comparison(self) -> None:
+        """Small issuance is normal and must not suppress the metric."""
+        years = [
+            year(2023, eps=5.0, shares=100_000_000.0),
+            year(2024, eps=6.0, shares=105_000_000.0),
+            year(2025, eps=7.0, shares=108_000_000.0),
+        ]
+        assert assess_eps_trend(years).verdict is MetricVerdict.STRONG
+
+    def test_falling_eps_on_a_stable_share_count_is_still_weak(self) -> None:
+        """The guard must not become an excuse that hides genuine decline."""
+        years = [
+            year(2023, eps=10.0, shares=100_000_000.0),
+            year(2024, eps=7.0, shares=100_000_000.0),
+            year(2025, eps=4.0, shares=100_000_000.0),
+        ]
+        assert assess_eps_trend(years).verdict is MetricVerdict.WEAK
+
+    def test_missing_share_counts_judge_eps_at_face_value(self) -> None:
+        """Most sources do not publish the share count; the metric still works."""
+        years = [year(2023, eps=5.0), year(2024, eps=6.0), year(2025, eps=7.0)]
+        assert assess_eps_trend(years).verdict is MetricVerdict.STRONG
 
 
 class TestPeRatio:

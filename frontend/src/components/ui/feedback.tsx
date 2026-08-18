@@ -14,7 +14,7 @@ import { Button } from './Button';
  * been skipped.
  */
 
-export function Spinner({ className }: { className?: string | undefined }) {
+function Spinner({ className }: { className?: string | undefined }) {
   return (
     <span
       role="status"

@@ -76,6 +76,12 @@ class ProviderMetadata:
         sourced from filings. This travels all the way to the UI, which refuses
         to present generated numbers as real market data. A provider that lies
         here is the single worst bug this codebase could ship.
+    :param price_delay_minutes: How stale the newest price may be, in minutes.
+        ``0`` means real time; ``None`` means the provider cannot say. Declared
+        here for the same reason as ``is_synthetic``: a user deciding when to buy
+        or sell is entitled to know whether the number on screen is the market or
+        a photograph of it fifteen minutes ago. Unlicensed public sources are
+        always delayed, so a provider claiming ``0`` should be able to prove it.
     """
 
     name: str
@@ -84,6 +90,7 @@ class ProviderMetadata:
     #: Where a user should go to verify a figure themselves - the guide's
     #: section 8 advice, made actionable.
     verification_sources: list[str] = field(default_factory=list)
+    price_delay_minutes: int | None = None
 
 
 @runtime_checkable

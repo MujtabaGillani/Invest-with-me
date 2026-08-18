@@ -1362,6 +1362,11 @@ export interface components {
             /** Name */
             name: string;
             /**
+             * Price Delay Minutes
+             * @description How stale the newest price may be, in minutes. 0 means real time; null means unknown. The UI must not present a delayed price as the current market price.
+             */
+            price_delay_minutes?: number | null;
+            /**
              * Verification Sources
              * @description Where to check real figures yourself (guide section 8).
              */
@@ -1400,12 +1405,25 @@ export interface components {
          * Sector
          * @description PSX sectors used for peer comparison and diversification checks.
          *
-         *     Deliberately coarse: the guide's advice is to compare P/E and debt against
-         *     peers "in the same sector" and to diversify across sectors such as banks,
-         *     cement, oil & gas, fertilizer and consumer goods.
+         *     Originally a deliberately coarse list, since the guide's advice is only to
+         *     compare P/E and debt against peers "in the same sector". It was widened to
+         *     cover all 38 sectors PSX itself publishes when the real data provider landed:
+         *     with a coarse list, 27 of PSX's sectors collapsed into :attr:`OTHER`, and a
+         *     "peer median P/E" computed across a bucket holding banks, sugar mills and
+         *     modarabas is worse than no comparison at all - it looks authoritative while
+         *     comparing unrelated businesses.
+         *
+         *     Widening this costs nothing at the schema level *by design*: see
+         *     :func:`app.db.base.enum_column`, which stores enums as ``VARCHAR`` with no
+         *     native type and no CHECK constraint precisely so that adding a sector is a
+         *     pure Python change with no migration.
+         *
+         *     The twelve original members keep their exact values. They are what the
+         *     bundled illustrative dataset and the existing tests use, and renaming one
+         *     would silently orphan stored rows.
          * @enum {string}
          */
-        Sector: "commercial_banks" | "cement" | "oil_and_gas" | "fertilizer" | "food_and_personal_care" | "power_generation" | "textile_composite" | "automobile_assembler" | "technology_and_communication" | "pharmaceuticals" | "chemical" | "other";
+        Sector: "commercial_banks" | "cement" | "oil_and_gas" | "fertilizer" | "food_and_personal_care" | "power_generation" | "textile_composite" | "automobile_assembler" | "technology_and_communication" | "pharmaceuticals" | "chemical" | "other" | "oil_and_gas_marketing" | "refinery" | "automobile_parts" | "cable_and_electrical_goods" | "engineering" | "glass_and_ceramics" | "insurance" | "investment_banks" | "leasing" | "modarabas" | "close_end_mutual_fund" | "reit" | "exchange_traded_funds" | "property" | "paper_and_packaging" | "sugar" | "tobacco" | "transport" | "textile_spinning" | "textile_weaving" | "synthetic_and_rayon" | "apparel" | "leather_and_tanneries" | "jute" | "woollen" | "vanaspati" | "miscellaneous";
         /**
          * SectorAllocation
          * @description Portfolio weight in one sector, against the user's own limit.

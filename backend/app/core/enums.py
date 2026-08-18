@@ -128,11 +128,25 @@ class AlertSeverity(StrEnum):
 class Sector(StrEnum):
     """PSX sectors used for peer comparison and diversification checks.
 
-    Deliberately coarse: the guide's advice is to compare P/E and debt against
-    peers "in the same sector" and to diversify across sectors such as banks,
-    cement, oil & gas, fertilizer and consumer goods.
+    Originally a deliberately coarse list, since the guide's advice is only to
+    compare P/E and debt against peers "in the same sector". It was widened to
+    cover all 38 sectors PSX itself publishes when the real data provider landed:
+    with a coarse list, 27 of PSX's sectors collapsed into :attr:`OTHER`, and a
+    "peer median P/E" computed across a bucket holding banks, sugar mills and
+    modarabas is worse than no comparison at all - it looks authoritative while
+    comparing unrelated businesses.
+
+    Widening this costs nothing at the schema level *by design*: see
+    :func:`app.db.base.enum_column`, which stores enums as ``VARCHAR`` with no
+    native type and no CHECK constraint precisely so that adding a sector is a
+    pure Python change with no migration.
+
+    The twelve original members keep their exact values. They are what the
+    bundled illustrative dataset and the existing tests use, and renaming one
+    would silently orphan stored rows.
     """
 
+    # --- Original twelve. Values are load-bearing; do not rename. -------------
     COMMERCIAL_BANKS = "commercial_banks"
     CEMENT = "cement"
     OIL_AND_GAS = "oil_and_gas"
@@ -145,6 +159,39 @@ class Sector(StrEnum):
     PHARMACEUTICALS = "pharmaceuticals"
     CHEMICAL = "chemical"
     OTHER = "other"
+
+    # --- Added with the real PSX provider, to mirror PSX's own sector list. ---
+    # ``OIL_AND_GAS`` above covers exploration, which is what the original list
+    # meant by it; marketing companies are a genuinely different business (a
+    # regulated distribution margin, not a reserves-and-drilling story) and so
+    # get their own member rather than being folded in.
+    OIL_AND_GAS_MARKETING = "oil_and_gas_marketing"
+    REFINERY = "refinery"
+    AUTOMOBILE_PARTS = "automobile_parts"
+    CABLE_AND_ELECTRICAL_GOODS = "cable_and_electrical_goods"
+    ENGINEERING = "engineering"
+    GLASS_AND_CERAMICS = "glass_and_ceramics"
+    INSURANCE = "insurance"
+    INVESTMENT_BANKS = "investment_banks"
+    LEASING = "leasing"
+    MODARABAS = "modarabas"
+    CLOSE_END_MUTUAL_FUND = "close_end_mutual_fund"
+    REIT = "reit"
+    EXCHANGE_TRADED_FUNDS = "exchange_traded_funds"
+    PROPERTY = "property"
+    PAPER_AND_PACKAGING = "paper_and_packaging"
+    SUGAR = "sugar"
+    TOBACCO = "tobacco"
+    TRANSPORT = "transport"
+    TEXTILE_SPINNING = "textile_spinning"
+    TEXTILE_WEAVING = "textile_weaving"
+    SYNTHETIC_AND_RAYON = "synthetic_and_rayon"
+    APPAREL = "apparel"
+    LEATHER_AND_TANNERIES = "leather_and_tanneries"
+    JUTE = "jute"
+    WOOLLEN = "woollen"
+    VANASPATI = "vanaspati"
+    MISCELLANEOUS = "miscellaneous"
 
 
 #: Human-readable labels. Kept server-side so the API is self-describing and the
@@ -162,4 +209,31 @@ SECTOR_LABELS: dict[Sector, str] = {
     Sector.PHARMACEUTICALS: "Pharmaceuticals",
     Sector.CHEMICAL: "Chemical",
     Sector.OTHER: "Other",
+    Sector.OIL_AND_GAS_MARKETING: "Oil & Gas Marketing",
+    Sector.REFINERY: "Refinery",
+    Sector.AUTOMOBILE_PARTS: "Automobile Parts & Accessories",
+    Sector.CABLE_AND_ELECTRICAL_GOODS: "Cable & Electrical Goods",
+    Sector.ENGINEERING: "Engineering",
+    Sector.GLASS_AND_CERAMICS: "Glass & Ceramics",
+    Sector.INSURANCE: "Insurance",
+    Sector.INVESTMENT_BANKS: "Investment Banks / Securities Companies",
+    Sector.LEASING: "Leasing Companies",
+    Sector.MODARABAS: "Modarabas",
+    Sector.CLOSE_END_MUTUAL_FUND: "Close-End Mutual Fund",
+    Sector.REIT: "Real Estate Investment Trust",
+    Sector.EXCHANGE_TRADED_FUNDS: "Exchange Traded Funds",
+    Sector.PROPERTY: "Property",
+    Sector.PAPER_AND_PACKAGING: "Paper, Board & Packaging",
+    Sector.SUGAR: "Sugar & Allied Industries",
+    Sector.TOBACCO: "Tobacco",
+    Sector.TRANSPORT: "Transport",
+    Sector.TEXTILE_SPINNING: "Textile Spinning",
+    Sector.TEXTILE_WEAVING: "Textile Weaving",
+    Sector.SYNTHETIC_AND_RAYON: "Synthetic & Rayon",
+    Sector.APPAREL: "Apparel",
+    Sector.LEATHER_AND_TANNERIES: "Leather & Tanneries",
+    Sector.JUTE: "Jute",
+    Sector.WOOLLEN: "Woollen",
+    Sector.VANASPATI: "Vanaspati & Allied Industries",
+    Sector.MISCELLANEOUS: "Miscellaneous",
 }

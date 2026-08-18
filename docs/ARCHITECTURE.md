@@ -355,6 +355,97 @@ gearing must be judged against peers (HBL), a profitable company burning cash
 
 ---
 
+## 15. The real PSX provider composes two sources and admits what it lacks
+
+**Decision.** `PsxDataProvider` sources listings and daily OHLCV from the
+MIT-licensed `psxdata` library, and annual figures by parsing the PSX Data Portal
+company page. It leaves the balance sheet and cash flow fields `None`, declares
+`is_synthetic: False`, and declares `price_delay_minutes: 15`.
+
+**Why two sources.** `psxdata.fundamentals()` returns the *filing list* — titles
+and PDF links — not figures, and for many symbols it returns nothing at all
+(verified against LUCK, which yields an empty frame). The numbers exist only as
+text on the company page or inside the annual-report PDFs. The company page does
+carry a four-year table of Sales, Profit after Taxation and EPS, which is enough
+for revenue growth, net margin and P/E.
+
+**What it cannot supply, and why that is visible.** Neither source publishes
+equity, debt, assets, cash flow or dividend history, so debt-to-equity, free cash
+flow and the dividend check report `insufficient_data`. This is §2 doing its job:
+three of seven metrics reporting "not enough data" is the honest outcome, and far
+better than the alternatives considered — deriving equity from ratios found
+elsewhere on the page (a guess presented as a filing), or treating a missing
+figure as zero (which the engines would score as a catastrophic result).
+
+**Rejected: PDF parsing.** The figures are all in the annual reports linked from
+the same page. Parsing them means handling a different layout per company per
+year, with a silent-wrong-number failure mode. A manual-entry path for the handful
+of companies a user actually holds is both less work and more trustworthy.
+
+**Rejected: a paid feed, for now.** Capital Stake (an authorised PSX vendor) and
+EODHD both carry full statements and dividend-adjusted EOD. That is the correct
+answer for anything public-facing — PSX prohibits redistribution and commercial
+use of its data without a licence — but it blocks on a commercial conversation,
+and the free path is sufficient for one person's own research.
+
+**`psxdata` is pinned and quarantined.** It is `0.1.0a5`, a pre-release that
+scrapes HTML, so an upgrade can change what it parses. It lives behind the
+provider seam, in an optional `[psx]` extra, imported lazily inside
+`registry.py::_build_psx_provider` — it pulls in pandas, pyarrow and numpy, and
+the default checkout and the entire test suite use the seeded provider. Its tests
+fake the module rather than importing it, so they need neither the extra nor the
+network.
+
+---
+
+## 16. `price_delay_minutes` is load-bearing too
+
+**Decision.** `ProviderMetadata` declares how stale its newest price may be.
+`0` means real time, `None` means the provider cannot say. The banner warns
+whenever the value is not `0`, in addition to warning about synthetic data.
+
+**Why.** §7 protects the user from mistaking invented figures for real ones. This
+protects them from mistaking a fifteen-minute-old price for the market — which
+matters precisely when the decision is *when* to act. Unlicensed public PSX data
+is always delayed; real-time PSX data requires a licence from the exchange. A
+provider claiming `0` should be able to prove it.
+
+`None` and `0` are deliberately different answers. An unknown lag still gets a
+warning, because the alternative is a user assuming the number is current.
+
+---
+
+## 17. An EPS series spanning a share-count change is not comparable
+
+**Decision.** `assess_eps_trend` returns `insufficient_data`, with a specific
+explanation, when the implied share count changed by more than
+`eps_share_count_change_tolerance_pct` (25%) across the reported years.
+
+**Why.** Found on real data, not in theory. Lucky Cement's PSX filings show EPS of
+43.06 for FY2023 against 18.91 for FY2024 while net profit *doubled*, because the
+share count went from ~319 million to ~1.49 billion in a bonus issue. Exchanges
+publish EPS as reported and do not restate earlier years. The checklist scored
+that company's earnings as **weak** — a false negative on a business whose profit
+had tripled, and exactly the kind of error that would make the tool worse than
+useless for deciding what to buy.
+
+The share count is not published by either source, so it is derived as
+`net_profit / eps` — basic EPS is profit over the weighted-average share count by
+definition. That derivation is what makes the corporate action detectable at all.
+
+**Rejected: restating EPS onto the latest share base.** That is what "adjusted
+EPS" means and it would let the trend be judged. But it would put figures on
+screen that no longer match the published accounts, which §12's Decimal handling
+exists specifically to avoid — a user comparing this app against a filing must see
+the same number. Refusing the comparison is the honest option; revenue and margin
+still answer "is the business growing".
+
+**The guard cannot become an excuse.** A falling EPS on a stable share count is
+still `weak`, and a missing share count still judges EPS at face value. Both are
+pinned by tests.
+
+---
+
 ## Known limitations
 
 Stated plainly, so nobody has to discover them:
@@ -366,11 +457,20 @@ Stated plainly, so nobody has to discover them:
 4. **Public holidays are not modelled** in the generated series — only weekends
    are skipped. Indicators only require ascending dates, so this changes nothing
    analytically.
-5. **Corporate actions are not modelled.** No split, bonus-issue or rights-issue
-   handling. A real provider would supply adjusted history; the trade ledger would
-   need explicit adjustment entries.
-6. **Peer groups are coarse.** Twelve sectors, and a company with mixed operations
-   (ENGRO-style conglomerates) sits in exactly one.
+5. **Corporate actions are not adjusted for.** PSX publishes as-traded prices and
+   as-reported EPS, so a moving average or an EPS series spanning a bonus issue is
+   comparing two share bases. The EPS case is now *detected* and reported as
+   insufficient data (§17); the price series is not, and the trade ledger would
+   still need explicit adjustment entries.
+6. **Peer groups match PSX's own 38 sectors** (widened from twelve when the real
+   provider landed), but a company with mixed operations (ENGRO-style
+   conglomerates) still sits in exactly one, and PSX publishes no sector at all
+   for several dozen symbols — those fall into `other`.
+8. **The real provider covers 4 of 7 fundamentals metrics** (§15). Debt-to-equity,
+   free cash flow and dividends need a balance sheet and cash flow statement that
+   no free source publishes.
+9. **Prices from the real provider are delayed by at least 15 minutes** (§16), and
+   using PSX data beyond personal research needs a licence from the exchange.
 7. **The suite takes ~2 minutes.** Each API test loads 24 companies × 240 price
    bars. Tolerable now; a session-scoped seeded database would be the fix if it
    becomes annoying.

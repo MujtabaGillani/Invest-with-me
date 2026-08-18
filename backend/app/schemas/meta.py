@@ -45,6 +45,13 @@ class ProviderInfo(ReadSchema):
         default_factory=list,
         description="Where to check real figures yourself (guide section 8).",
     )
+    price_delay_minutes: int | None = Field(
+        default=None,
+        description=(
+            "How stale the newest price may be, in minutes. 0 means real time; null means "
+            "unknown. The UI must not present a delayed price as the current market price."
+        ),
+    )
 
 
 class MetadataRead(ReadSchema):

@@ -13,9 +13,18 @@ htmlcov/
 .coverage
 coverage.xml
 
-# Local SQLite databases (dev only - never committed)
+# Local SQLite databases (dev only - never committed).
+#
+# The -wal and -shm sidecars need naming explicitly: WAL mode is enabled in
+# app/db/session.py, and "*.db" does not match "psx_invest.db-wal". Without these
+# lines a multi-megabyte write-ahead log follows the database into the repository.
 *.db
+*.db-wal
+*.db-shm
+*.db-journal
 *.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
 
 # ---------------------------------------------------------------------------
 # Node / frontend

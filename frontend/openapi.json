@@ -1840,6 +1840,18 @@
             "title": "Name",
             "type": "string"
           },
+          "price_delay_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How stale the newest price may be, in minutes. 0 means real time; null means unknown. The UI must not present a delayed price as the current market price.",
+            "title": "Price Delay Minutes"
+          },
           "verification_sources": {
             "description": "Where to check real figures yourself (guide section 8).",
             "items": {
@@ -1910,7 +1922,7 @@
         "type": "string"
       },
       "Sector": {
-        "description": "PSX sectors used for peer comparison and diversification checks.\n\nDeliberately coarse: the guide's advice is to compare P/E and debt against\npeers \"in the same sector\" and to diversify across sectors such as banks,\ncement, oil & gas, fertilizer and consumer goods.",
+        "description": "PSX sectors used for peer comparison and diversification checks.\n\nOriginally a deliberately coarse list, since the guide's advice is only to\ncompare P/E and debt against peers \"in the same sector\". It was widened to\ncover all 38 sectors PSX itself publishes when the real data provider landed:\nwith a coarse list, 27 of PSX's sectors collapsed into :attr:`OTHER`, and a\n\"peer median P/E\" computed across a bucket holding banks, sugar mills and\nmodarabas is worse than no comparison at all - it looks authoritative while\ncomparing unrelated businesses.\n\nWidening this costs nothing at the schema level *by design*: see\n:func:`app.db.base.enum_column`, which stores enums as ``VARCHAR`` with no\nnative type and no CHECK constraint precisely so that adding a sector is a\npure Python change with no migration.\n\nThe twelve original members keep their exact values. They are what the\nbundled illustrative dataset and the existing tests use, and renaming one\nwould silently orphan stored rows.",
         "enum": [
           "commercial_banks",
           "cement",
@@ -1923,7 +1935,34 @@
           "technology_and_communication",
           "pharmaceuticals",
           "chemical",
-          "other"
+          "other",
+          "oil_and_gas_marketing",
+          "refinery",
+          "automobile_parts",
+          "cable_and_electrical_goods",
+          "engineering",
+          "glass_and_ceramics",
+          "insurance",
+          "investment_banks",
+          "leasing",
+          "modarabas",
+          "close_end_mutual_fund",
+          "reit",
+          "exchange_traded_funds",
+          "property",
+          "paper_and_packaging",
+          "sugar",
+          "tobacco",
+          "transport",
+          "textile_spinning",
+          "textile_weaving",
+          "synthetic_and_rayon",
+          "apparel",
+          "leather_and_tanneries",
+          "jute",
+          "woollen",
+          "vanaspati",
+          "miscellaneous"
         ],
         "title": "Sector",
         "type": "string"
