@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+.vite/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+# Tests run in CI, not during an image build.
+src/**/*.test.ts
+src/**/*.test.tsx
+src/test/

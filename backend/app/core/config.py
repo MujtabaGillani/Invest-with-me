@@ -29,9 +29,10 @@ class Environment(StrEnum):
 def _split_csv(value: str | list[str]) -> list[str]:
     """Accept either a real list or a comma-separated string for list settings.
 
-    Pydantic-settings parses ``list`` fields as JSON by default, which makes
-    ``PSX_CORS_ORIGINS=http://a,http://b`` fail. Docker/CI operators expect CSV,
-    so we normalise it here instead of forcing JSON into env files.
+    Docker/CI operators expect CSV, so we normalise it here instead of forcing
+    JSON into env files. Requires ``enable_decoding=False`` on the model config -
+    otherwise pydantic-settings JSON-decodes the raw value before validators run
+    and never reaches this function.
     """
     if isinstance(value, str):
         return [item.strip() for item in value.split(",") if item.strip()]
@@ -48,6 +49,9 @@ class Settings(BaseSettings):
         env_prefix="PSX_",
         env_file=".env",
         env_file_encoding="utf-8",
+        # Hand raw env/.env strings to field validators instead of JSON-decoding
+        # complex types first; see ``_split_csv``.
+        enable_decoding=False,
         extra="ignore",
         frozen=True,
     )

@@ -18,9 +18,12 @@ Two deliberate departures from the generated template:
 from __future__ import annotations
 
 from logging.config import fileConfig
+from typing import Any, Literal
 
 from alembic import context
+from alembic.autogenerate.api import AutogenContext
 from sqlalchemy import engine_from_config, pool
+from sqlalchemy.sql.schema import SchemaItem
 
 from app.core.config import get_settings
 
@@ -41,18 +44,27 @@ config.set_main_option("sqlalchemy.url", settings.database_url)
 target_metadata = Base.metadata
 
 
-def _render_item(type_: str, obj: object, autogen_context: object) -> str | bool:
+def _render_item(type_: str, obj: Any, autogen_context: AutogenContext) -> str | Literal[False]:
     """Render custom types as their plain SQLAlchemy equivalents.
 
     Returning ``False`` falls back to Alembic's default rendering for everything
     else. See point 3 of the module docstring for why this matters.
+
+    The signature mirrors Alembic's own, including the ``Literal[False]`` return -
+    a plain ``bool`` would not satisfy it, because ``True`` is not a valid answer.
     """
     if type_ == "type" and isinstance(obj, UtcDateTime):
         return "sa.DateTime(timezone=True)"
     return False
 
 
-def _include_object(object_, name, type_, reflected, compare_to) -> bool:  # type: ignore[no-untyped-def]
+def _include_object(
+    object_: SchemaItem,
+    name: str | None,
+    type_: str,
+    reflected: bool,
+    compare_to: SchemaItem | None,
+) -> bool:
     """Filter objects out of autogenerate.
 
     Currently a pass-through with an explicit hook, so that excluding a

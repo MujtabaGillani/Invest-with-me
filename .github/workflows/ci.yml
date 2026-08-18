@@ -1,0 +1,191 @@
+# Continuous integration.
+#
+# Three independent jobs so a frontend formatting slip does not hide a backend test
+# failure - each reports separately and you can see at a glance which half broke.
+#
+# Every command here is one a developer can run locally, unchanged. That is
+# deliberate: a CI script that does something the developer cannot reproduce is a
+# script nobody can debug.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Lets a run be triggered by hand from the Actions tab, which is useful when
+  # investigating a flake without pushing an empty commit.
+  workflow_dispatch:
+
+# A new push to the same branch cancels the previous run rather than queueing
+# behind it - the older result is already stale.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend (lint, types, tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          # Matches `requires-python = ">=3.12"`; the code uses 3.12 syntax
+          # (PEP 695 type parameters, StrEnum).
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+
+      - name: Install
+        run: pip install -e ".[dev]"
+
+      - name: Lint
+        run: ruff check app tests scripts alembic
+
+      - name: Format check
+        run: ruff format --check app tests scripts alembic
+
+      - name: Type check
+        # Paths come from `files` in pyproject.toml, so this checks the same tree
+        # a developer sees when running `mypy` with no arguments.
+        run: mypy
+
+      - name: Tests
+        run: pytest -q --cov --cov-report=term-missing
+        env:
+          # Explicitly on SQLite with no seeding: the suite builds its own
+          # in-memory database per test and must not touch anything else.
+          PSX_DATABASE_URL: 'sqlite+pysqlite:///:memory:'
+          PSX_AUTO_MIGRATE: 'false'
+          PSX_SEED_ON_STARTUP: 'false'
+
+      - name: Migration matches the models
+        # Guards the thing that would cause a deploy-time outage: Alembic owns the
+        # production schema, so a model change without a migration must fail here
+        # rather than at `alembic upgrade head` on a real database.
+        run: |
+          alembic upgrade head
+          python - <<'PY'
+          from sqlalchemy import create_engine, inspect
+          from app.db.base import Base
+          from app.models import *  # noqa: F401,F403
+
+          engine = create_engine("sqlite+pysqlite:///./ci_check.db")
+          db = inspect(engine)
+
+          model_tables = set(Base.metadata.tables)
+          db_tables = set(db.get_table_names()) - {"alembic_version"}
+          problems = []
+
+          if model_tables != db_tables:
+              problems.append(f"tables differ: models-only={model_tables - db_tables} db-only={db_tables - model_tables}")
+
+          for table in sorted(model_tables & db_tables):
+              model_cols = {c.name for c in Base.metadata.tables[table].columns}
+              db_cols = {c["name"] for c in db.get_columns(table)}
+              if model_cols != db_cols:
+                  problems.append(f"{table}: models-only={model_cols - db_cols} db-only={db_cols - model_cols}")
+
+          if problems:
+              raise SystemExit(
+                  "Migration is out of step with the models. Run "
+                  "`alembic revision --autogenerate` and review the result.\n  "
+                  + "\n  ".join(problems)
+              )
+          print(f"Migration matches the models ({len(model_tables)} tables).")
+          PY
+        env:
+          PSX_DATABASE_URL: 'sqlite+pysqlite:///./ci_check.db'
+
+  frontend:
+    name: Frontend (lint, types, tests, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        # `npm ci` not `npm install`: it installs exactly the lock file and fails
+        # if package.json and the lock have drifted.
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npx prettier --check "src/**/*.{ts,tsx,css}"
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npx vite build
+
+  contract:
+    name: API contract is in sync
+    runs-on: ubuntu-latest
+    # The whole point of generating frontend types from the backend's schema is
+    # that they cannot drift. That guarantee is worthless unless something checks
+    # the committed files were regenerated - a stale api.d.ts type-checks perfectly
+    # while describing an API that no longer exists.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install backend
+        working-directory: backend
+        run: pip install -e ".[dev]"
+
+      - name: Install frontend
+        working-directory: frontend
+        run: npm ci
+
+      - name: Regenerate the schema and the types
+        run: |
+          cd backend && python scripts/export_openapi.py
+          cd ../frontend && npm run codegen
+
+      - name: Fail if the committed files are stale
+        run: |
+          if ! git diff --quiet -- frontend/openapi.json frontend/src/types/api.d.ts; then
+            echo "::error::The committed API schema or generated types are out of date."
+            echo "Run this locally and commit the result:"
+            echo "  cd backend && python scripts/export_openapi.py"
+            echo "  cd ../frontend && npm run codegen"
+            echo ""
+            git --no-pager diff --stat -- frontend/openapi.json frontend/src/types/api.d.ts
+            exit 1
+          fi
+          echo "Schema and generated types are in sync."

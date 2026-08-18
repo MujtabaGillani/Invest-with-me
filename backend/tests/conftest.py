@@ -16,6 +16,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from datetime import date
 from decimal import Decimal
+from typing import Any
 
 import pytest
 from fastapi import FastAPI
@@ -80,7 +81,7 @@ def engine() -> Iterator[Engine]:
     # Same pragma the application sets - without it SQLite ignores foreign keys,
     # and cascade behaviour would differ between tests and production.
     @event.listens_for(test_engine, "connect")
-    def _enable_foreign_keys(dbapi_connection, _record) -> None:  # type: ignore[no-untyped-def]
+    def _enable_foreign_keys(dbapi_connection: Any, _record: Any) -> None:
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()

@@ -242,17 +242,25 @@ class CompanyRepository(BaseRepository[Company]):
         Returned as one map so a list endpoint can annotate every row without a
         per-row existence check. ``{company_id: (has_financials, has_prices)}``.
         """
+        # ``.tuples()`` rather than ``.all()``: it yields real ``tuple[int, int]``
+        # rows, so ``dict()`` both works and type-checks. Without it the result is a
+        # sequence of ``Row`` objects, which are tuple-like at runtime but not to a
+        # type checker.
         financial_counts = dict(
             self.session.execute(
                 select(AnnualFinancials.company_id, func.count()).group_by(
                     AnnualFinancials.company_id
                 )
-            ).all()
+            )
+            .tuples()
+            .all()
         )
         price_counts = dict(
             self.session.execute(
                 select(PriceBar.company_id, func.count()).group_by(PriceBar.company_id)
-            ).all()
+            )
+            .tuples()
+            .all()
         )
         company_ids = self.session.scalars(select(Company.id)).all()
         return {

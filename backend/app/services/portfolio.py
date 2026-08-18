@@ -13,7 +13,7 @@ without arithmetic.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import ROUND_HALF_UP, Decimal
@@ -398,7 +398,9 @@ class PortfolioService:
 
     def _build_summary(
         self,
-        all_positions: Sequence[ReplayedPosition],
+        # Collection rather than Sequence: the caller passes ``dict.values()``, and
+        # this method only iterates - it never indexes or slices.
+        all_positions: Collection[ReplayedPosition],
         holdings: Sequence[HoldingRead],
         total_market_value: Decimal,
         allocations: Sequence[SectorAllocation],

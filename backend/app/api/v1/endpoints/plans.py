@@ -9,7 +9,7 @@ those rules visible in the API surface instead of hidden inside one handler.
 
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Body, Path, status
 
@@ -27,10 +27,15 @@ router = APIRouter(prefix="/plans", tags=["trade plans"])
 
 PlanIdPath = Annotated[int, Path(ge=1, description="Trade plan id.")]
 
-_CONFLICT = {
+#: Shared OpenAPI response documentation. Typed to match FastAPI's own signature,
+#: which keys responses by ``int | str`` because it also accepts wildcards such as
+#: "4XX" - a plain ``dict[int, ...]`` cannot be spread into it.
+ResponseDocs = dict[int | str, dict[str, Any]]
+
+_CONFLICT: ResponseDocs = {
     status.HTTP_409_CONFLICT: {"description": "The plan is not in a state that allows this."}
 }
-_NOT_FOUND = {status.HTTP_404_NOT_FOUND: {"description": "Plan not found."}}
+_NOT_FOUND: ResponseDocs = {status.HTTP_404_NOT_FOUND: {"description": "Plan not found."}}
 
 
 @router.get("", response_model=Page[TradePlanRead], summary="List trade plans")

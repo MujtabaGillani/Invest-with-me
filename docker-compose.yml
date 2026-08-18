@@ -1,0 +1,90 @@
+# Local stack: Postgres, the API, and the frontend behind nginx.
+#
+# This exists mainly to exercise the **Postgres** path. Day-to-day development runs
+# on SQLite with no containers at all (see the README), which is faster - but SQLite
+# and Postgres differ in ways that matter here: timestamp handling, ALTER COLUMN
+# support, and constraint naming. Running against Postgres before deploying is what
+# catches those.
+#
+#   docker compose up --build
+#   → frontend  http://localhost:8080
+#   → API       http://localhost:8000/docs
+#
+# Not a production deployment. See the notes on the `api` service.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: psx
+      # Local-only credential. A real deployment injects this from a secret store;
+      # it is written in plain text here precisely because this file is not one.
+      POSTGRES_PASSWORD: psx_local_dev
+      POSTGRES_DB: psx_invest
+    ports:
+      # Exposed so a local psql or a GUI client can inspect the data.
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      # `pg_isready` with the user and database named: the default check passes as
+      # soon as the server accepts connections, which is before the database the
+      # application needs actually exists.
+      test: ['CMD-SHELL', 'pg_isready -U psx -d psx_invest']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  api:
+    build:
+      context: ./backend
+    environment:
+      PSX_ENVIRONMENT: development
+      PSX_DATABASE_URL: postgresql+psycopg://psx:psx_local_dev@db:5432/psx_invest
+
+      # Alembic owns the schema; the entrypoint runs the migration explicitly
+      # below, so the application must not also try to create tables.
+      PSX_AUTO_MIGRATE: 'false'
+      # Demo data is loaded once, after the migration.
+      PSX_SEED_ON_STARTUP: 'false'
+
+      # The browser talks to nginx on 8080, which proxies to this service. The
+      # direct :8000 origin is allowed too, for hitting /docs during development.
+      PSX_CORS_ORIGINS: 'http://localhost:8080,http://127.0.0.1:8080,http://localhost:8000'
+      PSX_LOG_JSON: 'true'
+    ports:
+      - '8000:8000'
+    depends_on:
+      db:
+        # Waits for the healthcheck, not merely for the container to start -
+        # otherwise the migration races Postgres's own initialisation and fails.
+        condition: service_healthy
+    # Migrate, then seed, then serve. Seeding is idempotent, so a restart tops up
+    # rather than duplicating. `exec` hands PID 1 to uvicorn so it receives SIGTERM
+    # and shuts down cleanly instead of being killed.
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        echo "Applying migrations…"
+        alembic upgrade head
+        echo "Loading market data and demo portfolio…"
+        python -m app.db.seed
+        echo "Starting API…"
+        exec uvicorn app.main:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./frontend
+    ports:
+      - '8080:80'
+    depends_on:
+      api:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

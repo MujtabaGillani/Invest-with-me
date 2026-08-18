@@ -1,0 +1,19 @@
+# Anything not needed to build or run the image. Keeping the build context small
+# makes builds faster and stops local state (a dev database, a virtualenv built for
+# a different OS) leaking into the image.
+.venv/
+__pycache__/
+*.py[cod]
+*.db
+*.sqlite3
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+coverage.xml
+tests/
+.env
+.env.*
+!.env.example
+*.egg-info/
