@@ -1,0 +1,6 @@
+dist
+coverage
+node_modules
+# Generated from the backend's OpenAPI schema - never hand-formatted.
+src/types/api.d.ts
+openapi.json

@@ -1,0 +1,44 @@
+{
+  // Application code (browser).
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "useDefineForClassFields": true,
+
+    // Vite compiles each module in isolation, so these keep tsc's view of the
+    // code identical to what actually ships.
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    // --- Strictness ------------------------------------------------------
+    // "strict" alone still permits reading past the end of an array and
+    // silently ignoring an unused variable. Everything below closes a gap that
+    // has produced a real bug in a React codebase at some point.
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+
+    // --- Paths -----------------------------------------------------------
+    // A single "@/" alias rather than a set of per-folder aliases: deep relative
+    // imports are the thing worth removing, and more aliases just create more to
+    // remember. Mirrored in vite.config.ts and vitest's resolve config.
+    "baseUrl": ".",
+    "paths": { "@/*": ["./src/*"] },
+
+    "types": ["vite/client", "@testing-library/jest-dom"],
+    "skipLibCheck": true,
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo"
+  },
+  "include": ["src"]
+}

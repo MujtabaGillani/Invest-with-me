@@ -1,0 +1,118 @@
+# ===========================================================================
+# PSX Invest - Backend
+#
+# Single source of truth for dependencies and tooling configuration.
+# Install for local development with:
+#     python -m venv .venv && .venv/Scripts/activate   (Windows)
+#     pip install -e ".[dev]"
+# ===========================================================================
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "psx-invest-backend"
+version = "0.1.0"
+description = "Decision-support API for evaluating Pakistan Stock Exchange (PSX) equities"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115,<1.0",
+    "uvicorn[standard]>=0.32,<1.0",
+    "pydantic>=2.9,<3.0",
+    "pydantic-settings>=2.6,<3.0",
+    "SQLAlchemy>=2.0.36,<2.1",
+    "alembic>=1.14,<2.0",
+    # Postgres driver. SQLite (stdlib) is the zero-setup dev default; Postgres is
+    # the intended production target and needs no code change, only DATABASE_URL.
+    "psycopg[binary]>=3.2,<4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3,<9.0",
+    "pytest-cov>=6.0,<7.0",
+    "httpx>=0.27,<1.0",          # FastAPI TestClient transport
+    "ruff>=0.8,<1.0",            # lint + format
+    "mypy>=1.13,<2.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.setuptools.package-data]
+app = ["data/*.json"]
+
+# ---------------------------------------------------------------------------
+# Ruff - linting and formatting (replaces flake8 + isort + black)
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["."]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # import sorting
+    "N",        # pep8-naming
+    "UP",       # pyupgrade
+    "B",        # flake8-bugbear
+    "C4",       # comprehensions
+    "SIM",      # simplify
+    "RUF",      # ruff-specific
+]
+# B008 is idiomatic in FastAPI (Depends() in defaults), so it is disabled globally.
+ignore = ["B008"]
+
+[tool.ruff.lint.isort]
+# Without this, "app" is resolved as a third-party package and our own imports get
+# interleaved with SQLAlchemy's - which then fights the formatter on every file.
+known-first-party = ["app", "tests"]
+# "alembic" is a directory at the project root, so ruff would otherwise infer it
+# as one of our own packages and sort its imports after ours.
+known-third-party = ["alembic"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101"]            # asserts are the point of a test suite
+"alembic/versions/*" = ["E501"] # generated migration bodies
+
+# ---------------------------------------------------------------------------
+# mypy - typing gate. Strict on our own code, lenient on third-party stubs.
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+check_untyped_defs = true
+ignore_missing_imports = true
+exclude = '(alembic/versions|\.venv)'
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+# ---------------------------------------------------------------------------
+# pytest
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config"
+filterwarnings = ["error::DeprecationWarning:app.*"]
+markers = [
+    "unit: pure-function tests with no database or HTTP layer",
+    "api: tests that exercise the HTTP layer end to end",
+]
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["app/db/seed.py", "*/__init__.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true

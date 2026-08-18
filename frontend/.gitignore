@@ -1,0 +1,5 @@
+# Frontend-specific ignores. The root .gitignore covers node_modules, dist and
+# coverage; these are the extras Vite and the tooling produce.
+*.tsbuildinfo
+.vite/
+vite.config.ts.timestamp-*

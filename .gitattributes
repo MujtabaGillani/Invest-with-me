@@ -1,0 +1,28 @@
+# Line endings.
+#
+# The whole codebase is authored with LF (see .editorconfig), so LF is what the
+# repository stores *and* what lands in the working tree. Without this, Git on
+# Windows converts to CRLF on checkout, which makes every file look modified to
+# the next contributor on a different platform and turns a one-line change into a
+# whole-file diff.
+* text=auto eol=lf
+
+# Lock files and generated artefacts: still text, still LF, but never worth
+# reading in a diff. Collapsing them keeps a pull request reviewable.
+package-lock.json -diff linguist-generated
+frontend/src/types/api.d.ts -diff linguist-generated
+frontend/openapi.json -diff linguist-generated
+
+# Alembic migrations are generated but MUST be reviewed - autogenerate cannot tell
+# a column rename from a drop-plus-add, so these are deliberately left diffable.
+backend/alembic/versions/*.py text
+
+# Binary, so Git never attempts a merge or a diff on them.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary

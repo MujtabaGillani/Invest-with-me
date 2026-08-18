@@ -1,0 +1,16 @@
+Alembic migrations for PSX Invest.
+
+The database URL is read from application settings (PSX_DATABASE_URL) in env.py,
+not from alembic.ini.
+
+Common commands (run from backend/, with the virtualenv active):
+
+    alembic upgrade head                        # apply all migrations
+    alembic downgrade -1                        # revert the last one
+    alembic revision --autogenerate -m "note"   # generate from model changes
+    alembic current                             # show the applied revision
+    alembic history --verbose                   # show the full chain
+
+After autogenerating, ALWAYS read the generated file before committing it.
+Autogenerate detects added and removed columns; it cannot tell a rename from a
+drop-plus-add, and it will silently discard data if you let it.

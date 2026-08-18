@@ -1,0 +1,78 @@
+@import 'tailwindcss';
+
+/**
+ * Design tokens.
+ *
+ * Semantic names, not colour names: `--color-verdict-weak` rather than
+ * `--color-red`. A metric that fails a criterion should read as "weak" wherever
+ * it appears, and if the palette is retuned later, no component needs editing.
+ *
+ * The verdict colours are also deliberately *muted*. A screaming red on a "weak"
+ * metric reads as an instruction to sell, which is exactly what this product does
+ * not do - the colour should draw the eye, not make the decision.
+ */
+@theme {
+  --color-surface: oklch(100% 0 0);
+  --color-surface-sunken: oklch(98.2% 0.003 250);
+  --color-surface-raised: oklch(100% 0 0);
+  --color-border: oklch(92.5% 0.005 250);
+  --color-border-strong: oklch(86% 0.008 250);
+
+  --color-ink: oklch(24% 0.015 250);
+  --color-ink-muted: oklch(48% 0.012 250);
+  --color-ink-subtle: oklch(62% 0.01 250);
+
+  --color-accent: oklch(48% 0.13 250);
+  --color-accent-hover: oklch(42% 0.14 250);
+  --color-accent-subtle: oklch(96% 0.02 250);
+
+  /* Metric verdicts - the vocabulary from the API, one colour each. */
+  --color-verdict-strong: oklch(52% 0.11 160);
+  --color-verdict-strong-bg: oklch(96% 0.03 160);
+  --color-verdict-adequate: oklch(58% 0.1 240);
+  --color-verdict-adequate-bg: oklch(96.5% 0.025 240);
+  --color-verdict-weak: oklch(54% 0.12 35);
+  --color-verdict-weak-bg: oklch(96.5% 0.03 35);
+  --color-verdict-unknown: oklch(60% 0.008 250);
+  --color-verdict-unknown-bg: oklch(96.5% 0.004 250);
+
+  /* Gains and losses. Distinct from verdicts: this is money, not a judgement. */
+  --color-gain: oklch(50% 0.12 160);
+  --color-loss: oklch(52% 0.15 28);
+
+  /* Alert severities. */
+  --color-severity-info: oklch(56% 0.09 240);
+  --color-severity-warning: oklch(60% 0.12 75);
+  --color-severity-critical: oklch(52% 0.16 28);
+
+  /* Reserved for the synthetic-data banner, which must be impossible to miss. */
+  --color-synthetic: oklch(48% 0.13 300);
+  --color-synthetic-bg: oklch(96% 0.03 300);
+
+  --font-sans: 'Inter var', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Tabular figures so columns of money line up vertically. */
+  --font-mono: ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', Menlo, monospace;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    @apply bg-surface-sunken text-ink font-sans antialiased;
+  }
+
+  /* Money and ratios are read by comparing them down a column, so every numeric
+     cell uses tabular figures. Applied via a utility class rather than globally
+     to keep prose in a proportional face. */
+  .numeric {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Visible focus everywhere. This is a form-heavy tool and it must be usable
+     from the keyboard. */
+  :focus-visible {
+    @apply outline-accent outline-2 outline-offset-2;
+  }
+}

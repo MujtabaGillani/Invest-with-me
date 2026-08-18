@@ -1,0 +1,8 @@
+{
+  // Solution-style root config: it holds no compiler options of its own and only
+  // points at the two real projects. This is what lets `tsc --build` type-check
+  // the application and the Vite/Node config files under different lib and module
+  // settings - browser code must not see Node globals, and vice versa.
+  "files": [],
+  "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }]
+}
